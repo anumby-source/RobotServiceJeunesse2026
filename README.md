@@ -28,3 +28,8 @@ Principe: On garde le proto de l'année dernière mais avec quelques corrections
 ## Organisation:
 - distribuer les rôles pour les éléments à re-tester (moteurs, communication, reconnaissance, circuit, achats)
 - mettre en place un Github 2026
+
+# Benchmark ESP-now sur ESP32 S3
+
+En menant mon benchmark esp-now j'ai compris qu'il faut flasher micropython >= 1.26 (au moins) car c'est à partir de cette version de micropython que esp-no, est inclus dans micropython. Par défaut 1.19 était flashé sur le ESP32-S3.
+Pas grave mais il suffisait de le savoir.
