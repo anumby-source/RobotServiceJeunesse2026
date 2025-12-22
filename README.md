@@ -34,3 +34,12 @@ Principe: On garde le proto de l'année dernière mais avec quelques corrections
 En menant mon benchmark esp-now j'ai compris qu'il faut flasher micropython >= 1.26 (au moins) car c'est à partir de cette version de micropython que Esp-now, est inclus dans micropython.
 Par défaut 1.19 était flashé sur le ESP32-S3.
 Pas grave mais il suffisait de le savoir.
+
+# Convention d'identification pour ESP32-S3
+
+ESP32-S3-N8R2
+
+Chez Espressif, cette nomenclature signifie :
+
+N8 → 8 MB de Flash
+R2 → 2 MB de PSRAM
