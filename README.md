@@ -43,3 +43,14 @@ Chez Espressif, cette nomenclature signifie :
 
 N8 → 8 MB de Flash
 R2 → 2 MB de PSRAM
+
+# IDF and HEAP in ESP32
+
+list_of_tuples = esp32.idf_heap_info(esp32.HEAP_DATA )
+
+each tuple in list_of_tuples is:
+- total bytes
+- the free bytes
+- the largest free block
+- the minimum free seen over time
+
