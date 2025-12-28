@@ -1,8 +1,6 @@
 import network
 import time
 
-time.sleep(0.3)
-
 # Mode station obligatoire
 w0 = network.WLAN(network.STA_IF)
 w0.active(True)
@@ -27,13 +25,18 @@ peer_mac = MACA
 
 e.add_peer(peer_mac)
 
-print("Envoi de START à ESP A...")
-e.send(peer_mac, b"START")
-print("START envoyé !")
-
-print("Réception des OK...")
 while True:
-    host, msg = e.recv()
-    if msg:
-        print("Reçu :", msg, "de", host)
+    print("Envoi de START à ESP A...")
+    e.send(peer_mac, b"START")
+    print("START envoyé !")
 
+    print("Réception des OK...")
+    nbr_ok = 0
+    while nbr_ok < 10:
+        host, msg = e.recv()
+        nbr_ok += 1
+        print("OK reçu:", nbr_ok, "/ 10")
+    else:
+        print("Timeout ou message inconnu")
+
+    print("Réception terminée !")
