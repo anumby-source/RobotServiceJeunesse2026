@@ -38,7 +38,7 @@ try:
             print("attente...")
             host, msg = e.recv(10000)
             if msg is not None:
-                print("OK reçu:", nbr_ok + 1, "/ 10", "msg=", msg[0:4])
+                print("OK reçu:", nbr_ok + 1, "/ 10", "msg=", msg[0:4], "len=", len(msg))
             else:
                 print("Timeout ou message inconnu")
 
