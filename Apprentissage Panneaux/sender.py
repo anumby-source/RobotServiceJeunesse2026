@@ -22,25 +22,30 @@ def build_msg(N):
 #   avec cet identifiant.
 
 i = 0
+r = ""
 while True:
     i += 1
     message = b'message from ESP32 #' + f"{i}"
     # r = random.randint(0, images)
-    command_text = input(f"id [1..{images}] ? ")
+    command_text = input(f"id [1..{images}] ({r}) ")
+    if command_text == "":
+        command_text = f"{r}"
     try:
-        r = int(command_text.strip())
-        if r > 0 and r <= images:
-            message = build_msg(r)
+        text = command_text.strip()
+        if text == "stop":
+            message = b"stop"
         else:
-            print("?")
-            continue
+            r = int(text)
+            if r > 0 and r <= images:
+                message = build_msg(r)
+            else:
+                continue
     except:
-        print("??")
-        message = b"stop"
+        continue
 
     n = uart.write(message)
 
-    print(time.time(), "sent", message, n)
-    time.sleep(1)
+    # print(time.time(),"sent", message)
+    # time.sleep(1)
 
 
