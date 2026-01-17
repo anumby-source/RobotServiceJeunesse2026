@@ -25,11 +25,19 @@ i = 0
 while True:
     i += 1
     message = b'message from ESP32 #' + f"{i}"
-    r = random.randint(0, images)
-    if r > 0:
-        message = build_msg(r)
-    else:
+    # r = random.randint(0, images)
+    command_text = input(f"id [1..{images}] ? ")
+    try:
+        r = int(command_text.strip())
+        if r > 0 and r <= images:
+            message = build_msg(r)
+        else:
+            print("?")
+            continue
+    except:
+        print("??")
         message = b"stop"
+
     n = uart.write(message)
 
     print(time.time(), "sent", message, n)
