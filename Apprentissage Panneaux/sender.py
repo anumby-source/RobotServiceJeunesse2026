@@ -28,8 +28,11 @@ while True:
     r = random.randint(0, images)
     if r > 0:
         message = build_msg(r)
+    else:
+        message = b"stop"
     n = uart.write(message)
 
     print(time.time(), "sent", message, n)
     time.sleep(1)
+
 
