@@ -2,6 +2,7 @@ from fpioa_manager import fm
 from machine import UART
 import time
 
+
 # Setup UART
 fm.register(34, fm.fpioa.UART2_RX, force=True)
 uart = UART(UART.UART2, 9600, 8, None, 1, timeout=1000, read_buf_len=4096)
@@ -16,13 +17,21 @@ sensor.set_framesize(sensor.QVGA)
 sensor.set_windowing((224, 224))
 lcd.init()
 
-# on crée le dictionnaire de toutes les images à acquérir
-# cette liste est accumulée au fur et à mesure des captures.
-# on associe chaque image à l'identifiant fourni à chaque message.
+# on crÃ©e le dictionnaire de toutes les images Ã  acquÃ©rir
+# cette liste est accumulÃ©e au fur et Ã  mesure des captures.
+# on associe chaque image Ã  l'identifiant fourni Ã  chaque message.
 
 images = dict()
 
-# on ignore le premier message qui pourrait contenir un identifiant mas formé
+def show(images):
+    s = dict()
+    for k in images:
+        l = images[k]
+        s[k] = len(l)
+    return sorted(s.items())
+
+
+# on ignore le premier message qui pourrait contenir un identifiant mas formÃ©
 started = False
 
 # Loop
@@ -39,23 +48,33 @@ while True:
             n = int(line.strip())
             print("identifiant {:02d}".format(n))
             if n in images:
-                image_num = images[n]
-                image_num += 1
-                images[n] = image_num
-                # index = classifier.add_sample_img(img)
-                # print("add sample img:", index)
+                image_list = images[n]
+                image_list.append(img)
+                images[n] = image_list
+                print("set image to class ", n, show(images))
             else:
-                images[n] = 1
-                # index = classifier.add_class_img(img)
-                # print("add class img:", index)
+                images[n] = [img]
+                print("set image to class ", n, show(images))
 
-            # ici on va capturer cette image, et l'enregistrer dans le modèle
-            # et on va l'associer à cet identifiant.
         except:
-            # ici on va analyser une commande particulière
-            # - fin des capturez et training
+            if line == b"stop":
+                break
+            continue
 
-            pass
-        print("-----------", sorted(images.items()))
     time.sleep_ms(30)
 
+#analyse des images capturÃ©es
+
+for k in images:
+    image_list = images[k]
+    print("-----------", k, len(image_list), image_list)
+
+
+    # index = classifier.add_sample_img(img)
+    # print("add sample img:", index)
+    # index = classifier.add_class_img(img)
+    # print("add class img:", index)
+    # ici on va capturer cette image, et l'enregistrer dans le modÃ¨le
+    # et on va l'associer Ã  cet identifiant.
+
+# - fin des capturez et training
