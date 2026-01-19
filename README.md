@@ -1,4 +1,4 @@
-Projet RobotServiceJeunesse2026
+# Projet RobotServiceJeunesse2026
 
 
 
@@ -52,5 +52,26 @@ each tuple in list_of_tuples is:
 - total bytes
 - the free bytes
 - the largest free block
+
+# Discussion mardi 13 janvier sur projet Jeunesse
+
+- Alimentation Powerbank ok 18650 (vérifications pour la stabilité cependant)
+- Gilles a préparé une nouvelle implémentation de l'ensemble, avec S2 (avec l'antenne améliorée)
+  + une résistance de charge 
+  + Logiciel sans changement 
+  + Une néo pixel qu'il faudra intégrer au soft
+
+- Détection de symboles avec k210 plutôt que nom des villes 
+
+- Possibilité de fournir la version aux jeunes avec un capteur de distance à la place du k210
+
+- on garde des options avec esp32 s3 cam ? mais l'option de base préférée est celle qui garanti le moindre changements
+
+- Pb de la télécommande 
+    + Batterie changer ?
+    + version Ttgo esp32 avec afficheur + chargeur 
+    + Ajouter vitesse lente.
+
+
 - the minimum free seen over time
 
