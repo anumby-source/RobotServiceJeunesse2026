@@ -1,80 +1,76 @@
-from fpioa_manager import fm
-from machine import UART
-import time
-
-
-# Setup UART
-fm.register(34, fm.fpioa.UART2_RX, force=True)
-uart = UART(UART.UART2, 9600, 8, None, 1, timeout=1000, read_buf_len=4096)
-
 # setup the camera
 import sensor
 import lcd
+import time
+from machine import UART
+from fpioa_manager import fm
 
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
 sensor.set_windowing((224, 224))
+
+sensor.run(1)
+
 lcd.init()
 
-# on crÃ©e le dictionnaire de toutes les images Ã  acquÃ©rir
-# cette liste est accumulÃ©e au fur et Ã  mesure des captures.
-# on associe chaque image Ã  l'identifiant fourni Ã  chaque message.
+class_num = 3
+sample_num = 15
+class_names = ['stop', 'sens-interdit', 'dep-interdit']
 
-images = dict()
-
-def show(images):
-    s = dict()
-    for k in images:
-        l = images[k]
-        s[k] = len(l)
-    return sorted(s.items())
+# Setup UART
+fm.register(34, fm.fpioa.UART2_RX, force=True)
+uart = UART(UART.UART2, 115200, 8, None, 1, timeout=1000, read_buf_len=4096)
 
 
-# on ignore le premier message qui pourrait contenir un identifiant mas formÃ©
-started = False
+def draw_string(img, x, y, text, color, scale, bg=None):
+    if bg:
+        img.draw_rectangle(x - 2, y - 2, len(text) * 8 * scale + 4, 16 * scale, fill=True, color=bg)
+    img = img.draw_string(x, y, text, color=color, scale=scale)
+    return img
 
-# Loop
+
+import gc
+
+try:
+    del model
+except Exception:
+    pass
+try:
+    del classifier
+except Exception:
+    pass
+gc.collect()
+
+# model = kpu.load(0x300000)
+# classifier = kpu.classifier(model, class_num, sample_num) # ajouter  ", fea_len=512)" pour le modèle lite
+
+t0 = time.ticks_ms()
+
+c = 0
 while True:
     img = sensor.snapshot()
     lcd.display(img)
+
+    t = time.ticks_ms()
+    dt = t - t0
+    print("dt:", dt)
     if uart.any():
         line = uart.readline()
-        if not started:
-            started = True
-            continue
         print("line", line)
         try:
-            n = int(line.strip())
-            print("identifiant {:02d}".format(n))
-            if n in images:
-                image_list = images[n]
-                image_list.append(img)
-                images[n] = image_list
-                print("set image to class ", n, show(images))
-            else:
-                images[n] = [img]
-                print("set image to class ", n, show(images))
-
-        except:
-            if line == b"stop":
+            c = int(line)
+            # index = classifier.add_class_img(img)
+            print("add class img:", c)
+            if c >= (class_num - 1):
                 break
-            continue
+        except:
+            pass
 
-    time.sleep_ms(30)
-
-#analyse des images capturÃ©es
-
-for k in images:
-    image_list = images[k]
-    print("-----------", k, len(image_list), image_list)
+    time.sleep_ms(20)
 
 
-    # index = classifier.add_sample_img(img)
-    # print("add sample img:", index)
-    # index = classifier.add_class_img(img)
-    # print("add class img:", index)
-    # ici on va capturer cette image, et l'enregistrer dans le modÃ¨le
-    # et on va l'associer Ã  cet identifiant.
 
-# - fin des capturez et training
+
+
+
