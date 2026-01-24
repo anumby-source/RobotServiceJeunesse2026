@@ -6,6 +6,21 @@ uart = UART(1, baudrate=115200, tx=5, rx=6)
 
 # on suppose le nombre d'images
 images = 3
+samples = 5
+
+while True:
+    message = "classes={:02d}\n".format(images).encode()
+    n = len(message)
+    if uart.write(message) == n:
+        print("envoi du numbre de classes=", images)
+        break
+
+while True:
+    message = "samples={:02d}\n".format(samples).encode()
+    n = len(message)
+    if uart.write(message) == n:
+        print("envoi du numbre de samples=", samples)
+        break
 
 
 # on crée un message qui contient l'identifiant de l'image à capturer

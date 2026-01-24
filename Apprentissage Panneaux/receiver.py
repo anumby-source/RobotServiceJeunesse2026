@@ -4,6 +4,7 @@ import lcd
 import time
 from machine import UART
 from fpioa_manager import fm
+import re
 
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
@@ -14,8 +15,6 @@ sensor.run(1)
 
 lcd.init()
 
-class_num = 3
-sample_num = 15
 class_names = ['stop', 'sens-interdit', 'dep-interdit']
 
 # Setup UART
@@ -42,26 +41,50 @@ except Exception:
     pass
 gc.collect()
 
+while True:
+    if uart.any():
+        line = uart.readline().strip()
+        # print("line", line)
+        line = line.decode()
+        try:
+            line = line.replace("classes=", "")
+            class_num = int(line)
+            print("class_num = ", class_num)
+            break
+        except:
+            pass
+
+while True:
+    if uart.any():
+        line = uart.readline().strip()
+        # print("line", line)
+        line = line.decode()
+        try:
+            line = line.replace("samples=", "")
+            samples = int(line)
+            sample_num = class_num * samples
+            print("sample_num = ", sample_num)
+            break
+        except:
+            pass
+
 # model = kpu.load(0x300000)
 # classifier = kpu.classifier(model, class_num, sample_num) # ajouter  ", fea_len=512)" pour le modèle lite
 
-t0 = time.ticks_ms()
+print("Waiting for classes models............")
 
 c = 0
 while True:
     img = sensor.snapshot()
     lcd.display(img)
 
-    t = time.ticks_ms()
-    dt = t - t0
-    print("dt:", dt)
     if uart.any():
-        line = uart.readline()
-        print("line", line)
+        line = uart.readline().strip()
+        # print("line", line)
         try:
             c = int(line)
             # index = classifier.add_class_img(img)
-            print("add class img:", c)
+            print("add class model:", c)
             if c >= (class_num - 1):
                 break
         except:
