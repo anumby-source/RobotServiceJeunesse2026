@@ -2,4 +2,4 @@
 
 Positionnement de la caméra pour suivre le déplacement conforme
 
-![20260124_100944.jpg](20260124_100944.jpg)]
+<img src="20260124_100944.jpg" width="150" height="200">
