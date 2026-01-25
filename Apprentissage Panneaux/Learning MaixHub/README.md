@@ -28,17 +28,17 @@ https://maixhub.com/model/training/project
 
 ![img05.png](img05.png)
 
-    - terminer l'extraction avec l'option "Upload" et répéter cette opération pour toutes les vidéos de toutes les images à entraîner. Associer les labels de façon appropriée.
+   - terminer l'extraction avec l'option "Upload" et répéter cette opération pour toutes les vidéos de toutes les images à entraîner. Associer les labels de façon appropriée.
 
-    - lancer la tâche d'entraînement en sélectionnant la plateforme (nncase pour K210) et les actions d'amélioration du set puis "start"
+   - lancer la tâche d'entraînement en sélectionnant la plateforme (nncase pour K210) et les actions d'amélioration du set puis "start"
 
 ![img06.png](img06.png)
 
-    - observer le déroulement de la tâche d'entraînement avec l'option "Training task"
+   - observer le déroulement de la tâche d'entraînement avec l'option "Training task"
 
 ![img07.png](img07.png)
 
-    - Créer le kit avec le modèle entrainé avec l'option "Deploy"
+   - Créer le kit avec le modèle entrainé avec l'option "Deploy"
 
 ![img08.png](img08.png)
 
