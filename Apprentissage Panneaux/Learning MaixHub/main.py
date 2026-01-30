@@ -7,8 +7,8 @@ import gc, sys
 from fpioa_manager import fm
 
 input_size = (224, 224)
-labels = ['1', '2', '3']
-anchors = [2.5, 4.53, 3.75, 6.62, 3.38, 5.98, 1.53, 2.78, 3.09, 5.5]
+labels = ['04', '06', '01', '02', '03', '05', '08', '13', '17']
+anchors = [1.72, 1.19, 1.09, 0.42, 3.47, 3.25, 2.25, 2.03, 2.78, 2.69]
 
 def lcd_show_except(e):
     import uio
@@ -89,7 +89,6 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_
                 for obj in objects:
                     pos = obj.rect()
                     img.draw_rectangle(pos)
-                    img.draw_string(pos[0], pos[1], "%s : %.2f" %(labels[obj.classid()], obj.value()), scale=2, color=(255, 0, 0))
                 comm.send_detect_result(objects, labels)
             img.draw_string(0, 200, "t:%dms" %(t), scale=2, color=(255, 0, 0))
             img.draw_string(0, 2, "Upgrade to MaixCAM to use YOLOv8", scale=1.2, color=(255, 0, 0))
