@@ -7,6 +7,7 @@ https://maixhub.com/model/training/project
 ![img01.png](img01.png)
 
 - pour collecter des données, on va utiliser l'outil d'annotation automatique https://maixhub.com/model/training/project
+- lorsque l'on crée le dataset on doit choisir "détection"
 
 ![img02.png](img02.png)
 
