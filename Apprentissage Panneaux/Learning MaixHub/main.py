@@ -7,8 +7,8 @@ import gc, sys
 from fpioa_manager import fm
 
 input_size = (224, 224)
-labels = ['04', '06', '01', '02', '03', '05', '08', '13', '17']
-anchors = [1.72, 1.19, 1.09, 0.42, 3.47, 3.25, 2.25, 2.03, 2.78, 2.69]
+labels = ['04', '06', '08', '01', '02', '03', '07', '05', '09']
+anchors = [2.69, 2.34, 2.06, 1.97, 1.66, 1.53, 1.38, 1.0, 1.06, 0.28]
 
 def lcd_show_except(e):
     import uio
@@ -23,18 +23,21 @@ class Comm:
     def __init__(self, uart):
         self.uart = uart
 
-    def send_detect_result(self, objects, labels):
+    def send_detect_result(self, objects, labels, img):
         msg = ""
         for obj in objects:
             pos = obj.rect()
             p = obj.value()
             idx = obj.classid()
             label = labels[idx]
-            msg += "{}:{}:{}:{}:{}:{:.2f}:{}, ".format(pos[0], pos[1], pos[2], pos[3], idx, p, label)
+            msg += "{:.2f}:{}, ".format(p, label)
+            msg2 += "{}, ".format(label)
         if msg:
             msg = msg[:-2] + "\n"
+            msg2 = "\n"
         print("sending message", msg)
         self.uart.write(msg.encode())
+        img.draw_string(0, 170, msg2, scale=4, color=(255, 0, 0))
 
 def init_uart():
     fm.register(35, fm.fpioa.UART1_TX, force=True)
@@ -89,7 +92,7 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_
                 for obj in objects:
                     pos = obj.rect()
                     img.draw_rectangle(pos)
-                comm.send_detect_result(objects, labels)
+                comm.send_detect_result(objects, labels, img)
             img.draw_string(0, 200, "t:%dms" %(t), scale=2, color=(255, 0, 0))
             img.draw_string(0, 2, "Upgrade to MaixCAM to use YOLOv8", scale=1.2, color=(255, 0, 0))
             img.draw_string(0, 30, "wiki.sipeed.com/maixcam", scale=1.2, color=(255, 0, 0))
