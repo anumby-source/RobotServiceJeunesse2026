@@ -6,5 +6,5 @@
 #
 # mac =    # this device
 
-# import robot
+import robot
 
