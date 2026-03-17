@@ -7,7 +7,7 @@
 
 ## Programmes
 
-- `InitDataset.py`: Création d'un dataset en capturant N copies d'images de panneaux routiers imprimées avec une caméra OV2640 en faisant varier l'exposition, le cadrage, la distance de prise de vue. On crée les images dans le dossier `dataset/images/photo_<classe>_<n>.jpg`
-- `detourage.py`: Création des fichiers d'annotation XML au format Pascal VOC à partir d'un ensemble d'images. On crée les Bounding Box soit automatiquement, soit par modification manuelle. Les annotations sont créées dans le dossier `dataset/xml/photo_<classe>_<n>.xml`
+- `InitDataset.py`: Création d'un dataset en capturant avec une caméra OV2640, N copies d'images de panneaux routiers imprimées, au taux de 1 capture par seconde, en faisant varier l'exposition, le cadrage, la distance de prise de vue. On crée les images dans le dossier `dataset/images/photo_<classe>_<n>.jpg`
+- `detourage.py`: Création des fichiers d'annotation XML au format Pascal VOC à partir d'un ensemble d'images. On crée les Bounding Box, soit automatiquement (`OpenCV`), soit par modification manuelle. Les annotations sont créées dans le dossier `dataset/xml/photo_<classe>_<n>.xml`
 - `control.py`: émulation du scénario de jeu
 - `redimensionner`: redimensionner les panneaux
