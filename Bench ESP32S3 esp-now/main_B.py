@@ -2,6 +2,7 @@ import network
 import time
 import os
 import random
+from mac_addresses import *
 
 # Mode station obligatoire
 w0 = network.WLAN(network.STA_IF)

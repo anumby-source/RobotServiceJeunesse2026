@@ -2,6 +2,7 @@ import network
 import time
 import os
 import random
+from mac_addresses import *
 
 # Initialisation du WiFi en mode station (requis pour ESP-NOW)
 w0 = network.WLAN(network.STA_IF)

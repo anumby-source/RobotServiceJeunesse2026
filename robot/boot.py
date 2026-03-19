@@ -1,6 +1,10 @@
 # This file is executed on every boot (including wake-boot from deepsleep)
 import machine
 import sys, os
+import network
+
+MAC_ROBOT = network.WLAN().config("mac")
+print("MAC_ROBOT=", MAC_ROBOT)
 
 # mise a jour de sys.path
 def update_path(path):

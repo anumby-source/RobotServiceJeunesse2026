@@ -5,21 +5,25 @@ import KPU as kpu
 from machine import UART
 import gc, sys
 from fpioa_manager import fm
-from lib_led import *
-from lib_model import *
-
-led = Led()
-
-ind = 0
 
 input_size = (224, 224)
+labels = ['01', '02', '03', '04', '05', '06', '07']
+anchors = [0.66, 0.63, 1.44, 1.38, 1.88, 1.91, 1.06, 1.03, 0.88, 0.84]
+
+def lcd_show_except(e):
+    import uio
+    err_str = uio.StringIO()
+    sys.print_exception(e, err_str)
+    err_str = err_str.getvalue()
+    img = image.Image(size=input_size)
+    img.draw_string(0, 10, err_str, scale=1, color=(0xff,0x00,0x00))
+    lcd.display(img)
 
 class Comm:
     def __init__(self, uart):
         self.uart = uart
 
     def send_detect_result(self, objects, labels):
-        global ind
         msg = ""
         for obj in objects:
             pos = obj.rect()
@@ -30,12 +34,10 @@ class Comm:
         if msg:
             msg = msg[:-2] + "\n"
         self.uart.write(msg.encode())
-        led.set_led(0, ind)
-        ind = (ind + 1 ) % 5
 
 def init_uart():
-    fm.register(34, fm.fpioa.UART1_TX, force=True)
-    fm.register(35, fm.fpioa.UART1_RX, force=True)
+    fm.register(10, fm.fpioa.UART1_TX, force=True)
+    fm.register(11, fm.fpioa.UART1_RX, force=True)
 
     uart = UART(UART.UART1, 115200, 8, 0, 0, timeout=1000, read_buf_len=256)
     return uart
@@ -49,6 +51,27 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_
     sensor.set_vflip(sensor_vflip)
     sensor.run(1)
 
+    lcd.init(type=1)
+    lcd.rotation(lcd_rotation)
+    lcd.clear(lcd.WHITE)
+
+    if not labels:
+        with open('labels.txt','r') as f:
+            exec(f.read())
+    if not labels:
+        print("no labels.txt")
+        img = image.Image(size=(320, 240))
+        img.draw_string(90, 110, "no labels.txt", color=(255, 0, 0), scale=2)
+        lcd.display(img)
+        return 1
+    try:
+        img = image.Image("startup.jpg")
+        lcd.display(img)
+    except Exception:
+        img = image.Image(size=(320, 240))
+        img.draw_string(90, 110, "loading model...", color=(255, 255, 255), scale=2)
+        lcd.display(img)
+
     uart = init_uart()
     comm = Comm(uart)
 
@@ -59,17 +82,19 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_
         while(True):
             img = sensor.snapshot()
             t = time.ticks_ms()
-            rotated_img = img.rotation_corr(z_rotation=90)
-            objects = kpu.run_yolo2(task, rotated_img)
+            objects = kpu.run_yolo2(task, img)
             t = time.ticks_ms() - t
             if objects:
                 for obj in objects:
                     pos = obj.rect()
                     img.draw_rectangle(pos)
-                    print(labels[obj.classid()], obj.value())
+                    img.draw_string(pos[0], pos[1], "%s : %.2f" %(labels[obj.classid()], obj.value()), scale=2, color=(255, 0, 0))
                 comm.send_detect_result(objects, labels)
+            img.draw_string(0, 200, "t:%dms" %(t), scale=2, color=(255, 0, 0))
+            img.draw_string(0, 2, "Upgrade to MaixCAM to use YOLOv8", scale=1.2, color=(255, 0, 0))
+            img.draw_string(0, 30, "wiki.sipeed.com/maixcam", scale=1.2, color=(255, 0, 0))
+            lcd.display(img)
     except Exception as e:
-        led.reset_led()
         raise e
     finally:
         if not task is None:
@@ -78,10 +103,10 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_
 
 if __name__ == "__main__":
     try:
-        main(anchors = anchors, labels=labels, model_addr=0x300000, lcd_rotation=0)
-        # main(anchors = anchors, labels=labels, model_addr="/sd/model-253841.kmodel")
+        # main(anchors = anchors, labels=labels, model_addr=0x300000, lcd_rotation=0)
+        main(anchors = anchors, labels=labels, model_addr="/sd/model-256368.kmodel")
     except Exception as e:
         sys.print_exception(e)
-#        lcd_show_except(e)
+        lcd_show_except(e)
     finally:
         gc.collect()

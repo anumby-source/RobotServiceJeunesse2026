@@ -14,15 +14,11 @@ bb_manuelle = None
 liste_images = []
 index_image_courante = 0
 choix_valides = {}  # {chemin_image: {"label": str, "bb": tuple}}
-dossier_annotations = "annotations"
 
 # Chemins
-image_dir = "../dataset/images"
-output_dir = "../dataset/xml"
+image_dir = "../dataset80/images"
+output_dir = "../dataset80/xml"
 os.makedirs(output_dir, exist_ok=True)
-
-# Créer le dossier pour les annotations XML
-os.makedirs(dossier_annotations, exist_ok=True)
 
 def detecter_contours(image_path):
     global contours_trouves, image_globale, index_selectionne, bb_manuelle
