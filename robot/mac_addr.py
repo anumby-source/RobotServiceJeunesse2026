@@ -19,5 +19,5 @@ telecommande_mac = {
     7 : b''
     }
 
-# baseAddr = b'$X|\x91\xe0\xd8'
-baseAddr = b'\xd0\xcf\x13C\xa7$'
+baseAddr = b'$X|\x91\xe0\xd8'
+# baseAddr = b'\xd0\xcf\x13C\xa7$'
