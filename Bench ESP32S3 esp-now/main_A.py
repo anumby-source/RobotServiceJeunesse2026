@@ -23,12 +23,10 @@ import espnow
 e = espnow.ESPNow()
 e.active(True)
 
-# Adresse MAC de ESP B
-peer_mac = MACB
 
-e.add_peer(peer_mac)
+# e.add_peer(peer_mac)
 
-print("ESP A prêt et attend START...")
+# print("ESP A prêt et attend START...")
 
 
 def build_msg(seq):
@@ -62,12 +60,21 @@ def irq(e):
                 # time.sleep(0.2)
 
 
-e.irq(irq)
+# e.irq(irq)
 
-m = build_msg(12)
-print("M", 12, "len=", len(m), "m=", m[0:4])
+# m = build_msg(12)
+# print("M", 12, "len=", len(m), "m=", m[0:4])
 
 while True:
-    print("waiting...")
+    try:
+        print("send ok to", MACA, MACB, MACC)
+        msg = bytearray()
+        msg.extend(b"OK")
+        e.send(MACA, msg)
+        e.send(MACB, msg)
+        e.send(MACC, msg)
+    except:
+        print("")
+
     time.sleep(1)
 

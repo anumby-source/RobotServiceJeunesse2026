@@ -25,15 +25,38 @@ def espnow_receive():
     while True:
         if e.any():
             mac, msg = e.recv()
-            try:
-                sign = ujson.loads(msg)
-                detected_signs.append(sign)
-                print("Panneau reçu:", sign)
-            except:
-                pass
+            if msg:
+                sign_id = msg.decode('utf-8').strip()
+                try:
+                    m = re.match(r"([\d])[:].*", sign_id)
+                    sign_id = f"p{int(m.group(1)) + 1:02d}"
+                    print("Panneau reçu:", sign_id)
+                    robot.detect_sign(sign_id)
+                    send_sse_event(sign_id)
+                except:
+                    pass
 
 # Démarrage du thread de réception ESP-NOW
 _thread.start_new_thread(espnow_receive, ())
+
+sse_clients = set()
+
+def handle_sse(conn):
+    print("Nouvelle connexion SSE établie !")
+    sse_clients.add(conn)
+    try:
+        while True:
+            time.sleep(1)
+    except:
+        sse_clients.remove(conn)
+
+def send_sse_event(data):
+    print(f"Envoi SSE : {data} à {len(sse_clients)} clients")
+    for conn in sse_clients:
+        try:
+            conn.send(f"data: {data}\n\n")
+        except:
+            sse_clients.remove(conn)
 
 #====================  Classe Robot
 
@@ -293,6 +316,8 @@ body = """
 """
 
 script = """
+        const eventSource = new EventSource('/sse');
+
         // Envoi des commandes au robot
         function sendCommand(cmd) {
             fetch('/command?cmd=' + cmd)
@@ -355,30 +380,27 @@ script = """
 
         // Mettre à jour les informations de jeu
         function updateGameInfo() {
-            fetch('/elapsed_time')
-                .then(response => response.text())
-                .then(elapsedTime => {
-                    document.getElementById('elapsed-time').textContent = elapsedTime;
-                })
-                .catch(error => console.error("Erreur lors de la récupération du temps écoulé :", error));
-    
-            fetch('/penalties')
-                .then(response => response.text())
-                .then(penalties => {
-                    document.getElementById('penalties').textContent = penalties;
-                })
-                .catch(error => console.error("Erreur lors de la récupération des pénalités :", error));
-    
-            fetch('/total_score')
-                .then(response => response.text())
-                .then(totalScore => {
-                    document.getElementById('total-score').textContent = totalScore;
-                })
-                .catch(error => console.error("Erreur lors de la récupération du score total :", error));
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Script chargé et DOM prêt !");
+            const eventSource = new EventSource('/sse');
+
+            eventSource.onopen = () => {
+                console.log("Connexion SSE ouverte !");
+            };
+            
+            eventSource.onerror = () => {
+                console.error("Erreur SSE : reconnexion...");
+            };
+            
+            // Écouter les événements SSE
+            eventSource.onmessage = function(e) {
+                const signId = e.data;
+                encadrerPanneau(signId);
+                console.log("Panneau détecté via ESP-NOW :", signId);
+            };
+            
             document.querySelectorAll('.panneau').forEach(panneau => {
                 panneau.addEventListener('click', function() {
                     this.classList.toggle('encadre');
@@ -406,7 +428,7 @@ def handle_request(server, request, conn):
         conn.send("HTTP/1.1 400 Bad Request\r\n\r\n")
         return False
 
-    # print("my handle request=", m.group(1))
+    print("my handle request=", m.group(1))
     path = m.group(1)
     if "/static/" in path:
         # print("static file")
@@ -460,6 +482,11 @@ def handle_request(server, request, conn):
     elif path == "/reset_game":
         robot.stop_game()
         conn.send("HTTP/1.1 200 OK\r\n\r\n")
+    elif path == "/sse":
+        print("connection sse")
+        conn.send("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n\r\n")
+        handle_sse(conn)
+        return True
     else:
         etat_robot = robot.show_etat()
         response = server.html().replace("{etat_robot}", etat_robot)
@@ -475,6 +502,9 @@ serv.set_script(script)
 serv.set_body(body)
 
 serv.run(handle_request)
+# Après serv.run(handle_request), ajoute :
+time.sleep(2)  # Laisse le temps au navigateur de se connecter
+send_sse_event("p06")  # Envoi test
 serv.stop_server()
 
 

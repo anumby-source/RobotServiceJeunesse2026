@@ -1,5 +1,6 @@
 import network
 import time
+from mac_addresses import *
 
 MAC = network.WLAN().config("mac")
 
@@ -33,6 +34,7 @@ e.active(True)
 
 # Adresse MAC de ESP B
 peer_mac = robot_mac[1]
+peer_mac = MACB
 
 e.add_peer(peer_mac)
 
@@ -47,4 +49,4 @@ e.irq(irq)
 
 while True:
     print("waiting...")
-    time.sleep(1)
+    time.sleep(5)
