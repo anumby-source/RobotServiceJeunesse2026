@@ -2,7 +2,7 @@ import uasyncio as asyncio
 import urandom
 from server_async import ServerAsync
 from simple_queue import SimpleQueue
-import espnow
+
 from mac_addr import *
 
 # Initialisation d’ESP-NOW
@@ -47,12 +47,9 @@ def callback(e):
     # Attendre un message
     mac, msg = e.recv()
     if msg:  # Si un message est reçu        
-        print("Message reçu :", msg)
         txt = msg.decode('utf-8')
         print("Message reçu decode :", txt)
         irq_queue.append(txt)   # pas d’await ici !
-        # except Exception as e:
-        #     print("Erreur callback:", e)
 
 async def espnow_dispatcher():
     while True:
@@ -62,8 +59,8 @@ async def espnow_dispatcher():
                 msg = irq_queue.pop(0)
 
                 # Exemple : "5:0.90:stop"
-                parts = msg.split(":")
-                pid = parts[0]  # "5"
+                # parts = msg.split(":")
+                # pid = parts[0]  # "5"
 
                 await q.put("PID=" + msg)
             except:
