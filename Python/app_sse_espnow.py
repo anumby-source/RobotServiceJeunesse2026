@@ -2,10 +2,17 @@ import uasyncio as asyncio
 import urandom
 from server_async import ServerAsync
 from simple_queue import SimpleQueue
+import espnow
+from mac_addr import *
+
+# Initialisation d’ESP-NOW
+e = espnow.ESPNow()
+e.active(True)
 
 esp_task = None
 
 q=SimpleQueue()
+irq_queue = []
 
 async def http_handler(server, path, w):
     global esp_task
@@ -20,7 +27,8 @@ async def http_handler(server, path, w):
 
     if path.startswith("/start"):
         await q.put("START")
-        esp_task = asyncio.create_task(espnow_sim())
+        # esp_task = asyncio.create_task(espnow_sim())
+        # esp_task = asyncio.create_task(callback())
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         return True
@@ -33,6 +41,35 @@ async def http_handler(server, path, w):
         return True
 
     return False
+
+
+def callback(e):
+    # Attendre un message
+    mac, msg = e.recv()
+    if msg:  # Si un message est reçu        
+        print("Message reçu :", msg)
+        txt = msg.decode('utf-8')
+        print("Message reçu decode :", txt)
+        irq_queue.append(txt)   # pas d’await ici !
+        # except Exception as e:
+        #     print("Erreur callback:", e)
+
+async def espnow_dispatcher():
+    while True:
+        if irq_queue:
+            print("espnow_dispatcher", irq_queue)
+            try:
+                msg = irq_queue.pop(0)
+
+                # Exemple : "5:0.90:stop"
+                parts = msg.split(":")
+                pid = parts[0]  # "5"
+
+                await q.put("PID=" + msg)
+            except:
+                pass
+
+        await asyncio.sleep(0.05)
 
 async def espnow_sim():
     while True:
@@ -60,14 +97,6 @@ style=(
     ".g button{padding:10px;font-size:18px;background:green;color:#fff;border:none;border-radius:8px;}"
 )
 
-#        "function s(){fetch('/start');}"
-#        "function r(){fetch('/reset');}"
-#        "function exitServer(){fetch('/exit');}"
-#
-#        "window.s=s;"
-#        "window.r=r;"
-#        "window.p=p;"
-#        "window.exitServer=exitServer;"
 
 
 script=(
@@ -90,7 +119,7 @@ script=(
             "if (m.startsWith('PID=')) {"
               "var n=parseInt(m.substring(4));"
               # "RB();"
-              "document.getElementById('b'+n).style.background='red';}"
+              "document.getElementById('b'+m).style.background='red';}"
         "};"
 
 )
@@ -99,7 +128,15 @@ server=ServerAsync("ESP32-S3", style, script, body)
 server.set_handler(http_handler)
 server.set_sse_queue(q)
 
+peer_mac = robot_mac[1]
+print("peer_mac=", peer_mac)
+e.add_peer(peer_mac)
+
+e.irq(callback)
+
 async def main():
+    irq_queue.clear() 
+    asyncio.create_task(espnow_dispatcher())
     await server.run()
 
 asyncio.run(main())
