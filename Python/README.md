@@ -1,13 +1,32 @@
-# Développements Python
+# Programme de base pour le jeu Robot
 
-## Librairies
+![img_1.png](img_1.png)
 
-- `camera_init.py`: contient la fonction `camera_init()` pour initialiser la caméra OV2640
-- `server.py`: contient la classe `Server` pour définir un serveur Web en mode AP_IF avec une IHM minimale
+Le programme base.py implémente la connexion entre le cpu du Robot et l'écran de contrôle
 
-## Programmes
+Le principe de base consiste à recevoir les messages (canal espnow) qui reflètent les panneaux routiers détectés par la caméra du K210.
 
-- `InitDataset.py`: Création d'un dataset en capturant avec une caméra OV2640, N copies d'images de panneaux routiers imprimées, au taux de 1 capture par seconde, en faisant varier l'exposition, le cadrage, la distance de prise de vue. On crée les images dans le dossier `dataset/images/photo_<classe>_<n>.jpg`
-- `detourage.py`: Création des fichiers d'annotation XML au format Pascal VOC à partir d'un ensemble d'images. On crée les Bounding Box, soit automatiquement (`OpenCV`), soit par modification manuelle. Les annotations sont créées dans le dossier `dataset/xml/photo_<classe>_<n>.xml`
-- `control.py`: émulation du scénario de jeu
-- `redimensionner`: redimensionner les panneaux
+![img_2.png](img_2.png)
+
+l'IHM de base.py montre tous les messages reçus et décode ces messages en allumant les boutons des panneaux.
+
+Etat d'avancement du programme de base:
+
+
+
+- le programme base tourne sur un esp32
+- c'est un serveur Web utilisant les SSE
+- il est connecté espnow avec le CPU du robot.
+  => il faudra assurer que la mac adresse du ESP32 de base est déclarée
+     dans le fichier mac_addr 
+- actuellement la base est sensible aux valeurs d'ID de panneaux transférés via espnow mais il est 
+  aussi sensible de façon équivalente aux boutons équivalents de l'IHM de la base
+- il reste à ajouter la propagation des valeur de la vitesse (0, v1, v2) qui est nécessaire pour
+  faire fonctionner le protocole du jeu.
+- actuellement du protocole de jeu est simplifié
+   - on attend la reconnaissance du panneau "start"
+   - ensuite tous les panneaux sont reconnus mais n'influence pas le jeu
+   - en suite la reconnaissance de "stop" arrête le jeu
+   - l'IHM met à jour le temps courant de parours
+   - on ne comptabilise pas le pénalités pour l'instant
+
