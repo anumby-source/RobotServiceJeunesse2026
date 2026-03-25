@@ -2,6 +2,7 @@ import uasyncio as asyncio
 import urandom
 from server_async import ServerAsync
 from simple_queue import SimpleQueue
+import time
 
 from mac_addr import *
 import espnow
@@ -15,15 +16,60 @@ esp_task = None
 q=SimpleQueue()
 irq_queue = []
 
+class Jeu:
+    def __init__ (self):
+        self.reset()
+    
+    def reset(self):
+        self.t0 = 0
+        self.time = 0
+        self.penalties = []
+        self.running = False
+        self.active = False
+    
+    def restart(self):
+        self.active = True
+
+    def start(self):
+        if self.active:
+            if not self.running:
+                self.t0 = time.time()
+                self.running = True
+    
+    def stop(self):
+        if self.running:
+            self.running = False
+            self.active = False
+    
+    def now(self):
+        return int(time.time() - self.t0)
+    
+jeu = Jeu()
+
 async def http_handler(server, path, w):
     global esp_task
     
-    print("http_handler", path)
+    print("http_handler", path, jeu.running)
     if path.startswith("/btn/"):
-        n=path.split("/")[-1]
-        await q.put("BTN="+n)
+        n = path.split("/")[-1]
+        print("http_handler> BTN=", n)
+        if n == '6':
+            jeu.start()
+        elif n == '7':
+            jeu.stop()
+
+        if jeu.running or n == '7':
+            t = jeu.now()
+            p = len(jeu.penalties)
+            total = t + p
+            values = f"VALUES={t},{p},{total}"
+            print("values=", values)
+            await q.put(values)
+            await q.put("BTN=" + n)
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
+        
+        print("jeu btn", jeu.running)
         return True
 
     if path.startswith("/start"):
@@ -32,14 +78,21 @@ async def http_handler(server, path, w):
         # esp_task = asyncio.create_task(callback(e))
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
+        jeu.restart()
+        print("jeu START", jeu.running)
         return True
 
     if path=="/reset":
         await q.put("RESET")
         if not esp_task is None:
             esp_task.cancel()
+        jeu.reset()
+        values = f"VALUES=0,0,0"
+        print("values=", values)
+        await q.put(values)
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
+        print("jeu RESET", jeu.running)
         return True
 
     return False
@@ -157,6 +210,14 @@ script=(
               # "RB();"
               "document.getElementById('b'+n).style.background='red';"
             "}"
+            "if (m.startsWith('VALUES=')) {"
+                "const parts = m.substring(7).split(',');"
+                "document.getElementById('t1').value = parts[0] || '';"
+                "document.getElementById('t2').value = parts[1] || '';"
+                "document.getElementById('t3').value = parts[2] || '';"
+            "}"
+
+
         "};"
 
 )
