@@ -12,6 +12,8 @@ l'IHM de base.py montre tous les messages reçus et décode ces messages en allu
 
 Etat d'avancement du programme de base:
 
+
+
 - le programme base tourne sur un esp32
 - c'est un serveur Web utilisant les SSE
 - il est connecté espnow avec le CPU du robot.
