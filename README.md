@@ -75,13 +75,13 @@ each tuple in list_of_tuples is:
 
 # Programme de base pour le jeu Robot
 
-![img_1.png](img_1.png)
+![Python/img_1.png](Python/img_1.png)
 
 Le programme base.py implémente la connexion entre le cpu du Robot et l'écran de contrôle
 
 Le principe de base consiste à recevoir les messages (canal espnow) qui reflètent les panneaux routiers détectés par la caméra du K210.
 
-![img_2.png](img_2.png)
+![Python/img_2.png](Python/img_2.png)
 
 l'IHM de base.py montre tous les messages reçus et décode ces messages en allumant les boutons des panneaux.
 
