@@ -1,0 +1,116 @@
+"<!DOCTYPE html>"
+"<html>"
+"<head>"
+"<meta charset='utf-8'>"
+"<title>" + self.title + "</title>"
+"<style>"
+"body{background:#111;color:#fff;display: flex;text-align:center;justify-content: center;align-items: center;font-family:Arial;}"
+"button{padding:10px 20px;margin:5px;font-size:15px;border:none;border-radius:8px;}"
+".exit{background:#900;color:#fff;}"
+".card{background:#222;padding:20px;border-radius:15px;flex-direction:column;gap:15px;align-items:center;}
++ self.style +
+
+
+".g{margin-top:10px;display:flex;flex-direction:column;align-items:center;}"
+".g table {margin:auto;}"
+".g button{padding:10px;font-size:15px;background:green;color:#fff;border:none;border-radius:8px;}"
+".log{margin-top:10px;max-height:150px;overflow:auto;font-family:monospace;}"
+".status{font-size:15px;background:#ECECB9;color: black;display:inline-block;}"
+".value{padding:5px;font-size:20px;color:red;max-height:20px;resize:none;overflow: hidden;}"
+
+
+
+"</style>"
+"</head>"
+"<body>"
+"<div class='card'>"
+"<h2>" + self.title + "</h2>"
+
++ self.body +
+
+        "<button id='startBtn' onclick=fetch('/start');>START</button>"
+        "<button id='resetBtn' onclick=fetch('/reset');>RESET</button>"
+        "<div class='g'>"
+                "<table>"
+                        "<tr>"
+                                "<td>"
+                                        "<button id='b6' onclick=p(6);>Start</button>"
+                                "</td>"
+                        "</tr>"
+                        "<tr>"
+                                "<td>"
+                                        "<button id='b1' onclick=p(1);>Limite 30</button>"
+                                        "<button id='b2' onclick=p(2);>Cdez le passage</button>"
+                                        "<button id='b3' onclick=p(3);>Passage pietons</button>"
+                                        "<button id='b4' onclick=p(4);>Priorite a droite</button>"
+                                        "<button id='b5' onclick=p(5);>Stationnement</button>"
+                                "</td>"
+                        "</tr>"
+                        "<tr>"
+                                "<td>"
+                                        "<button id='b7' onclick=p(7);>Stop</button>"
+                                "</td>"
+                        "</tr>"
+                "</table>"
+        "</div>"
+        "<div id='status' class='status'>"
+                "<p>Jeu</p>"
+                "<table>"
+                        "<tr>"
+                                "<td>temps ecoule:</td><td><textarea id='t1' class='value'>t1</textarea></td>"
+                                "<td>penalites:</td><td><textarea id='t2' class='value'>t2</textarea></td>"
+                                "<td>temps total:</td><td><textarea id='t3' class='value'>t3</textarea></td>"
+                        "</tr>"
+                "</table>"
+        "</div>"
+        "<div id='log' class='log'>"
+        "</div>"
+
+
+
+"<button class='exit' id='exitBtn' onclick=fetch('/exit');>Exit</button>"
+"</div>"
+"<script>"
+
+. self.script +
+
+                "var L = document.getElementById('log');"
+                "var E = new EventSource('/events');"
+
+                "function sendVal(t) {"
+                        "const v = document.getElementById(t).value;"
+                        "fetch('/set?value=' + encodeURIComponent(v));"
+                "}"
+
+                "function p(i){fetch('/btn/'+i);}"
+                "window.p = p;"
+
+                "function RB(){"
+                        "for(let i=1;i<=7;i++) document.getElementById('b'+i).style.background='green';"
+                "}"
+
+                "E.onmessage=function(e){"
+                        "var m = e.data;"
+                        "if (m == 'RESET') {RB();return;}"
+                        "if (m.startsWith('PID=')) {"
+                                "var p = document.createElement('p');"
+                                "p.textContent = m;"
+                                "L.appendChild(p);"
+                                "// var n = parseInt(m.substring(4));"
+                                "// RB();"
+                                "document.getElementById('b'+m).style.background='red';"
+                        "}"
+                        "if (m.startsWith('values=')) {"
+                                "const data = event.data.split('=');"
+                                "const values = data[1].split(',');"
+
+                                "document.getElementById('t1').value = values[0] || '';"
+                                "document.getElementById('t2').value = values[1] || '';"
+                                "document.getElementById('t3').value = values[2] || '';"
+                        "}"
+                "};"
+
+
+"</script>"
+"</body>"
+"</html>"

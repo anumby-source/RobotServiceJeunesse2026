@@ -21,34 +21,85 @@ class ServerAsync:
 
     def html(self):
         return (
-        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-        "<title>"+self.title+"</title>"
-        "<style>"
-        "body{background:#111;color:#fff;text-align:center;font-family:Arial;}"
-        "button{padding:10px 20px;margin:5px;font-size:15px;border:none;border-radius:8px;}"
-        ".exit{background:#900;color:#fff;}"
-        ".card{background:#222;padding:20px;border-radius:15px;display:inline-block;}"
-        +self.style+
-        "</style>"
-        "</head><body>"
-        "<div class='card'><h2>"+self.title+"</h2>"
-        +self.body+
-        '<button class="exit" id="exitBtn" onclick=fetch("/exit");>Exit</button>'
-        "</div>"
-        "<script>"+self.script+"</script>"
-        "</body></html>"
+"<!DOCTYPE html>"
+"<html>"
+"<head>"
+"<meta charset='utf-8'>"
+"<title>"
+
++ self.title +
+
+"</title>"
+"<style>"
+"body{background:#111;color:#fff;display: flex;text-align:center;justify-content: center;align-items: center;font-family:Arial;}"
+"button{padding:10px 20px;margin:5px;font-size:15px;border:none;border-radius:8px;}"
+".exit{background:#900;color:#fff;}"
+".card{background:#222;padding:20px;border-radius:15px;flex-direction:column;gap:15px;align-items:center;}"
+
++ self.style +
+
+"</style>"
+"</head>"
+"<body>"
+"<div class='card'>"
+"<h2>"
+
++ self.title +
+
+"</h2>"
+
++ self.body +
+
+"<button class='exit' id='exitBtn' onclick=fetch('/exit');>Exit</button>"
+"</div>"
+"<script>"
+
++ self.script +
+
+"</script>"
+"</body></html>"
         )
 
     async def send_html(self,writer):
+        """
+        page = self.html()
+        print("Server.send_html", len(page))
+
+        header = (
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+        )
+
+        await writer.awrite(header)
+
+        bloc = 1024
+        for i in range(0, len(page), bloc):
+            b = page[i:i+bloc]
+            print("Server.send_html", len(b))
+            await writer.awrite(b)
+
+            # flush si disponible
+            if hasattr(writer, "drain"):
+                await writer.drain()
+            else:
+                await asyncio.sleep_ms(1)
+
+        await writer.aclose()
+        """
         page=self.html()
+        print("Server.send_html> page=", len(page))
         header="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
 
         await writer.awrite(header)
         await asyncio.sleep(0)
 
-        bloc = 1024
-        for i in range(0,len(page),bloc):
-            await writer.awrite(page[i:i+bloc])
+        bloc = 1024*8
+        for i in range(0, len(page), bloc):
+            b = page[i:i+bloc]
+            print("Server.send_html> bloc=", len(b))
+            await writer.awrite(b)
             await asyncio.sleep(0)
 
         await writer.aclose()

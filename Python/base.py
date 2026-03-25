@@ -29,14 +29,15 @@ async def http_handler(server, path, w):
     if path.startswith("/start"):
         await q.put("START")
         # esp_task = asyncio.create_task(espnow_sim())
-        # esp_task = asyncio.create_task(callback())
+        # esp_task = asyncio.create_task(callback(e))
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         return True
 
     if path=="/reset":
         await q.put("RESET")
-        esp_task.cancel()
+        if not esp_task is None:
+            esp_task.cancel()
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         return True
@@ -75,49 +76,87 @@ async def espnow_sim():
         n=urandom.getrandbits(3)%7+1
         await q.put("PID="+str(n))
 
-body=(
-    "<button id='startBtn' onclick=fetch('/start');>START</button>"
-    "<button id='resetBtn' onclick=fetch('/reset');>RESET</button>"
-    '<div class="g">'
-        "<button id='b6' onclick=p(6);>Start</button>"
-        "<button id='b1' onclick=p(1);>Limite 30</button>"
-        "<button id='b2' onclick=p(2);>Cdez le passage</button>"
-        "<button id='b3' onclick=p(3);>Passage pietons</button>"
-        "<button id='b4' onclick=p(4);>Priorite a droite</button>"
-        "<button id='b5' onclick=p(5);>Stationnement</button>"
-        "<button id='b7' onclick=p(7);>Stop</button>"
-    '</div>'
-    '<div id="log" style="margin-top:10px;max-height:150px;overflow:auto;font-family:monospace;"></div>'
-)
-
 style=(
-    ".g{margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}"
-    ".g button{padding:10px;font-size:18px;background:green;color:#fff;border:none;border-radius:8px;}"
+".g{margin-top:10px;display:flex;flex-direction:column;align-items:center;}"
+".g table {margin:auto;}"
+".g button{padding:10px;font-size:15px;background:green;color:#fff;border:none;border-radius:8px;}"
+".log{margin-top:10px;max-height:150px;overflow:auto;font-family:monospace;}"
+".status{font-size:15px;background:#ECECB9;color: black;display:inline-block;}"
+".value{padding:5px;font-size:20px;color:red;max-height:20px;resize:none;overflow:hidden;"
+"}"
 )
 
-
+body=(
+        "<button id='startBtn' onclick=fetch('/start');>START</button>"
+        "<button id='resetBtn' onclick=fetch('/reset');>RESET</button>"
+        "<div class='g'>"
+                "<table>"
+                        "<tr>"
+                                "<td>"
+                                        "<button id='b6' onclick=p(6);>Start</button>"
+                                "</td>"
+                        "</tr>"
+                        "<tr>"
+                                "<td>"
+                                        "<button id='b1' onclick=p(1);>Limite 30</button>"
+                                        "<button id='b2' onclick=p(2);>Cedez le passage</button>"
+                                        "<button id='b3' onclick=p(3);>Passage pietons</button>"
+                                        "<button id='b4' onclick=p(4);>Priorite a droite</button>"
+                                        "<button id='b5' onclick=p(5);>Stationnement</button>"
+                                "</td>"
+                        "</tr>"
+                        "<tr>"
+                                "<td>"
+                                        "<button id='b7' onclick=p(7);>Stop</button>"
+                                "</td>"
+                        "</tr>"
+                "</table>"
+        "</div>"
+        "<div id='status' class='status'>"
+                "<p>Jeu</p>"
+                "<table>"
+                        "<tr>"
+                                "<td>temps ecoule:</td><td><textarea id='t1' class='value'>t1</textarea></td>"
+                                "<td>penalites:</td><td><textarea id='t2' class='value'>t2</textarea></td>"
+                                "<td>temps total:</td><td><textarea id='t3' class='value'>t3</textarea></td>"
+                        "</tr>"
+                "</table>"
+        "</div>"
+        "<div id='log' class='log'>"
+        "</div>"
+)
 
 script=(
         "var L = document.getElementById('log');"
         "var E = new EventSource('/events');"
-
         "function p(i){fetch('/btn/'+i);}"
-        "window.p=p;"
-
+        "window.p = p;"
         "function RB(){"
             "for(let i=1;i<=7;i++) document.getElementById('b'+i).style.background='green';"
         "}"
-
+        "function sendVal(t) {"
+            "const v = document.getElementById(t).value;"
+            "fetch('/set?value=' + encodeURIComponent(v));"
+        "}"
         "E.onmessage=function(e){"
             "var m = e.data;"
-            "var p = document.createElement('p');"
-            "p.textContent = m;"
-            "L.appendChild(p);"
+            "console.log(m);"
+            "var ligne = document.createElement('p');"
+            "ligne.textContent = m;"
+            "L.appendChild(ligne);"
             "if (m == 'RESET') {RB();return;}"
             "if (m.startsWith('PID=')) {"
-              "var n=parseInt(m.substring(4));"
+              "var n = parseInt(m.substring(4));"
+              "console.log(n);"
               # "RB();"
-              "document.getElementById('b'+m).style.background='red';}"
+              "document.getElementById('b'+m).style.background='red';"
+            "}"
+            "if (m.startsWith('BTN=')) {"
+              "var n = parseInt(m.substring(4));"
+              "console.log(n);"
+              # "RB();"
+              "document.getElementById('b'+n).style.background='red';"
+            "}"
         "};"
 
 )
