@@ -6,7 +6,7 @@ Le programme base.py implémente la connexion entre le cpu du Robot et l'écran 
 
 Le principe de base consiste à recevoir les messages (canal espnow) qui reflètent les panneaux routiers détectés par la caméra du K210.
 
-![img.png](img.png)
+![img_2.png](img_2.png)
 
 l'IHM de base.py montre tous les messages reçus et décode ces messages en allumant les boutons des panneaux.
 
