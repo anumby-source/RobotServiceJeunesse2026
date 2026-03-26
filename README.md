@@ -88,7 +88,6 @@ l'IHM de base.py montre tous les messages reçus et décode ces messages en allu
 Etat d'avancement du programme de base:
 
 
-
 - le programme base tourne sur un esp32
 - c'est un serveur Web utilisant les SSE
 - il est connecté espnow avec les CPUs de deux robots.
@@ -106,5 +105,4 @@ Etat d'avancement du programme de base:
      - l'IHM met à jour le temps courant de parours
      - on ne comptabilise pas le pénalités pour l'instant
      - le bouton global "RESET" réinitialise les deux jeux
-
 
