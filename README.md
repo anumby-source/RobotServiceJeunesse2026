@@ -106,3 +106,6 @@ Etat d'avancement du programme de base:
      - on ne comptabilise pas le pénalités pour l'instant
      - le bouton global "RESET" réinitialise les deux jeux
 
+=> attention il va falloir modifier la fonction d'envoi espnow dans le code des robots afin de coder le numéro du robot
+
+
