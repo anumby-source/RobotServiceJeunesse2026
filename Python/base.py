@@ -13,9 +13,11 @@ e.active(True)
 
 esp_task = None
 
+# définition des deux queues d'attente pour les événements
 queue_sse = SimpleQueue()
 queue_espnow = []
 
+# gestion du jeu
 class Jeu:
     def __init__ (self):
         self.reset()
@@ -43,19 +45,22 @@ class Jeu:
     
     def now(self):
         return int(time.time() - self.t0)
-    
+
+# on va gérer deux joueurs (donc pour deux robots)
 jeuA = Jeu()
 jeuB = Jeu()
 
+# gestion des routes HTTP
 async def http_handler(server, path, w):
     global esp_task
     
     print("http_handler", path, jeuA.running, jeuB.running)
     if path.startswith("/Abtn/"):
+        # simulation de la détection des panneaux du joueur A par clicks sur les boutons panneaux
         n = path.split("/")[-1]
         print("http_handler> ABTN=", n)
         if n == '6':
-            jeuA.start()
+            jeuA. ()
         elif n == '7':
             jeuA.stop()
 
@@ -74,6 +79,7 @@ async def http_handler(server, path, w):
         return True
 
     if path.startswith("/Bbtn/"):
+        # simulation de la détection des panneaux du joueur B par clicks sur les boutons panneaux
         n = path.split("/")[-1]
         print("http_handler> BBTN=", n)
         if n == '6':
@@ -96,6 +102,7 @@ async def http_handler(server, path, w):
         return True
 
     if path.startswith("/start"):
+        # gestion global du démarrage du jeu pour les deux joueurs
         await queue_sse.put("START")
         # esp_task = asyncio.create_task(espnow_sim())
         # esp_task = asyncio.create_task(callback(e))
@@ -107,6 +114,7 @@ async def http_handler(server, path, w):
         return True
 
     if path=="/reset":
+        # gestion global du reset du jeu pour les deux joueurs
         await queue_sse.put("RESET")
         if not esp_task is None:
             esp_task.cancel()
@@ -126,36 +134,9 @@ async def http_handler(server, path, w):
     return False
 
 
-def callback(e):
-    # Attendre un message
-    mac, msg = e.recv()
-    if msg:  # Si un message est reçu        
-        txt = msg.decode('utf-8')
-        print("Message reçu decode :", txt)
-        queue_espnow.append(txt)   # pas d’await ici !
-
-async def espnow_dispatcher():
-    while True:
-        if queue_espnow:
-            print("espnow_dispatcher", queue_espnow)
-            try:
-                msg = queue_espnow.pop(0)
-
-                # Exemple : "5:0.90:stop"
-                # parts = msg.split(":")
-                # pid = parts[0]  # "5"
-
-                await queue_sse.put("PID=" + msg)
-            except:
-                pass
-
-        await asyncio.sleep(0.05)
-
-async def espnow_sim():
-    while True:
-        await asyncio.sleep(2)
-        n=urandom.getrandbits(3)%7+1
-        await queue_sse.put("PID="+str(n))
+"""
+IHM
+"""
 
 style=(
 ".g{margin-top:10px;display:flex;flex-direction:column;align-items:center;}"
@@ -278,16 +259,50 @@ script=(
         "};"
 )
 
+
+"""
+Main de l'application
+"""
+
+# initialisaion du Serveur
 server=ServerAsync("ESP32-S3", style, script, body)
 server.set_handler(http_handler)
 server.set_sse_queue(queue_sse)
 
+# connexion aux robots
 peer_mac = robot_mac[1]
 print("peer_mac=", peer_mac)
 e.add_peer(peer_mac)
 
+# gestion espnow
+def callback(e):
+    # Attendre un message
+    mac, msg = e.recv()
+    if msg:  # Si un message est reçu
+        txt = msg.decode('utf-8')
+        print("Message reçu decode :", txt)
+        queue_espnow.append(txt)   # pas d’await ici !
+
+async def espnow_dispatcher():
+    while True:
+        if queue_espnow:
+            print("espnow_dispatcher", queue_espnow)
+            try:
+                msg = queue_espnow.pop(0)
+
+                # Exemple : "5:0.90:stop"
+                # parts = msg.split(":")
+                # pid = parts[0]  # "5"
+
+                await queue_sse.put("PID=" + msg)
+            except:
+                pass
+
+        await asyncio.sleep(0.05)
+
 e.irq(callback)
 
+# boucle du serveur
 async def main():
     queue_espnow.clear()
     asyncio.create_task(espnow_dispatcher())
