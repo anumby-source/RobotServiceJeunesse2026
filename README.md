@@ -100,23 +100,22 @@ Etat d'avancement du programme de base:
 - actuellement du protocole de jeu est simplifié
      - Le bouton global "START" lance les deux jeux pour les deux robots
      - on attend la reconnaissance du panneau "start"
-     - ensuite tous les panneaux sont reconnus mais n'influence pas le jeu
+     - ensuite tous les panneaux sont reconnus mais n'influencent pas le jeu
      - en suite la reconnaissance de "stop" arrête le jeu
      - l'IHM met à jour le temps courant de parours
      - on ne comptabilise pas le pénalités pour l'instant
      - le bouton global "RESET" réinitialise les deux jeux
 
-=> attention il va falloir modifier la fonction d'envoi espnow dans le code des robots afin de coder le numéro du robot
-
+Les messages espnow fournissent automatiquement l'adresse MAC du robot appelant.
+Le logiciel va attribuer le premier robot ayant parlé au côté "A" et le deuxième au côté "B"
 
 # Logique des événements dans le programme base.
 
 On gère plusieurs sources d'événements:
 - il y a ce qui vient de espnow: ce sont des événements produits par les robots. Ces messages contienent:
-   - le numéro du robot (=> 1..6)
    - Les ID des panneaux reconnus par le K210
    - l'état du moteurs (=> vitesse=0, v1, v2)
-   - avec le format: "PID=robot,ID,vitesse"
+   - avec le format: "PID=ID,vitesse"
 - il y a ce qui vient de l'IHM (à travers des appels (fetch("key=data"))
 
 Les événements espnow sont mis en queue dans la queue "queue_espnow", qui est elle-même exploitée (dépilée) par la fonction
@@ -127,6 +126,7 @@ La queue "queue_sse" est dépilée par la fonction du serveur "Server.sse_broadc
 Les événements SSE sont traités dans le script JS dans le fonction du gestionnaire "EventSource" 
   - déclarée par "var E = new EventSource('/events');"
   - qui est appelé par "E.onmessage = function(e) {...}"
+  - un événement SSE transféré de espnow va émuler un click par l'appel interne de la fonction "onclick" attachée aux boutons
 
 Cette fonction produit en particulier des actions directes sur des éléments de l'IHM du style "document.getElementById(<element_id>).style.background='red';"
 
