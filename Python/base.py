@@ -13,8 +13,8 @@ e.active(True)
 
 esp_task = None
 
-q=SimpleQueue()
-irq_queue = []
+queue_sse = SimpleQueue()
+queue_espnow = []
 
 class Jeu:
     def __init__ (self):
@@ -65,8 +65,8 @@ async def http_handler(server, path, w):
             total = t + p
             values = f"AVALUES={t},{p},{total}"
             print("values=", values)
-            await q.put(values)
-            await q.put("ABTN=" + n)
+            await queue_sse.put(values)
+            await queue_sse.put("ABTN=" + n)
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         
@@ -87,8 +87,8 @@ async def http_handler(server, path, w):
             total = t + p
             values = f"BVALUES={t},{p},{total}"
             print("values=", values)
-            await q.put(values)
-            await q.put("BBTN=" + n)
+            await queue_sse.put(values)
+            await queue_sse.put("BBTN=" + n)
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         
@@ -96,7 +96,7 @@ async def http_handler(server, path, w):
         return True
 
     if path.startswith("/start"):
-        await q.put("START")
+        await queue_sse.put("START")
         # esp_task = asyncio.create_task(espnow_sim())
         # esp_task = asyncio.create_task(callback(e))
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
@@ -107,17 +107,17 @@ async def http_handler(server, path, w):
         return True
 
     if path=="/reset":
-        await q.put("RESET")
+        await queue_sse.put("RESET")
         if not esp_task is None:
             esp_task.cancel()
         jeuA.reset()
         jeuB.reset()
         values = f"AVALUES=0,0,0"
         print("values=", values)
-        await q.put(values)
+        await queue_sse.put(values)
         values = f"BVALUES=0,0,0"
         print("values=", values)
-        await q.put(values)
+        await queue_sse.put(values)
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         print("jeuA RESET", jeuA.running)
@@ -132,20 +132,20 @@ def callback(e):
     if msg:  # Si un message est reçu        
         txt = msg.decode('utf-8')
         print("Message reçu decode :", txt)
-        irq_queue.append(txt)   # pas d’await ici !
+        queue_espnow.append(txt)   # pas d’await ici !
 
 async def espnow_dispatcher():
     while True:
-        if irq_queue:
-            print("espnow_dispatcher", irq_queue)
+        if queue_espnow:
+            print("espnow_dispatcher", queue_espnow)
             try:
-                msg = irq_queue.pop(0)
+                msg = queue_espnow.pop(0)
 
                 # Exemple : "5:0.90:stop"
                 # parts = msg.split(":")
                 # pid = parts[0]  # "5"
 
-                await q.put("PID=" + msg)
+                await queue_sse.put("PID=" + msg)
             except:
                 pass
 
@@ -155,7 +155,7 @@ async def espnow_sim():
     while True:
         await asyncio.sleep(2)
         n=urandom.getrandbits(3)%7+1
-        await q.put("PID="+str(n))
+        await queue_sse.put("PID="+str(n))
 
 style=(
 ".g{margin-top:10px;display:flex;flex-direction:column;align-items:center;}"
@@ -280,7 +280,7 @@ script=(
 
 server=ServerAsync("ESP32-S3", style, script, body)
 server.set_handler(http_handler)
-server.set_sse_queue(q)
+server.set_sse_queue(queue_sse)
 
 peer_mac = robot_mac[1]
 print("peer_mac=", peer_mac)
@@ -289,7 +289,7 @@ e.add_peer(peer_mac)
 e.irq(callback)
 
 async def main():
-    irq_queue.clear() 
+    queue_espnow.clear()
     asyncio.create_task(espnow_dispatcher())
     await server.run()
 

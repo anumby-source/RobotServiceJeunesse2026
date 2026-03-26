@@ -109,3 +109,30 @@ Etat d'avancement du programme de base:
 => attention il va falloir modifier la fonction d'envoi espnow dans le code des robots afin de coder le numéro du robot
 
 
+# Logique des événements dans le programme base.
+
+On gère plusieurs sources d'événements:
+- il y a ce qui vient de espnow: ce sont des événements produits par les robots
+   - le numéro du robot (=> 1..6)
+   - Les ID des panneaux reconnus par le K210
+   - l'état du moteurs (=> vitesse=0, v1, v2)
+- il y a ce qui vient de l'IHM (à travers des appels (fetch("<key>=<data>"))
+
+Les événements espnow sont mis en queue dans la queue "queue_espnow", qui est elle-même exploitée (dépilée) par la fonction
+"espnow_dispatcher", qui transforme les evts "espnow" en evts SSE. Ces événements ont le format "PID=<data>"
+
+Ces événements produisent tous des messages SSE, qui sont mis en queue d'attente dans la queue "queue_sse".
+La queue "queue_sse" est dépilée par la fonction du serveur "Server.sse_broadcaster()".
+Les événements SSE sont traités dans le script JS dans le fonction du gestionnaire "EventSource" 
+  - déclarée par "var E = new EventSource('/events');"
+  - qui est appelé par "E.onmessage = function(e) {...}"
+
+Cette fonction produit en particulier des actions directes sur des éléments de l'IHM du style "document.getElementById(<element_id>).style.background='red';"
+
+L'IHM est structurée avec:
+- des éléments de contrôle généraux
+    - pour démarrer le jeu ou réinitialiser les données du jeu
+- une table à deux colonnes: pour chacun des deux joueurs:
+    - des boutons pour émuler les panneaux si on fonctionne sans connexion avec les robots ou pour refléter les panneaux effectivement reconnus
+    - un panneau des valeurs du jeu, mises à jours en temps réel.
+
