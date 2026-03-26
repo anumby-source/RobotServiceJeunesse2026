@@ -7,6 +7,10 @@ import time
 from mac_addr import *
 import espnow
 
+# Initialisation Wi-Fi en mode station
+sta = network.WLAN(network.STA_IF)
+sta.active(True)
+
 # Initialisation d’ESP-NOW
 e = espnow.ESPNow()
 e.active(True)
@@ -50,88 +54,12 @@ class Jeu:
 jeuA = Jeu()
 jeuB = Jeu()
 
-# gestion des routes HTTP
-async def http_handler(server, path, w):
-    global esp_task
-    
-    print("http_handler", path, jeuA.running, jeuB.running)
-    if path.startswith("/Abtn/"):
-        # simulation de la détection des panneaux du joueur A par clicks sur les boutons panneaux
-        n = path.split("/")[-1]
-        print("http_handler> ABTN=", n)
-        if n == '6':
-            jeuA. ()
-        elif n == '7':
-            jeuA.stop()
+games = dict()
+games['A'] = jeuA
+games['B'] = jeuB
+ids = ['A', 'B']
+robots = dict()
 
-        if jeuA.running or n == '7':
-            t = jeuA.now()
-            p = len(jeuA.penalties)
-            total = t + p
-            values = f"AVALUES={t},{p},{total}"
-            print("values=", values)
-            await queue_sse.put(values)
-            await queue_sse.put("ABTN=" + n)
-        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
-        await w.aclose()
-        
-        print("jeu btn", jeuA.running)
-        return True
-
-    if path.startswith("/Bbtn/"):
-        # simulation de la détection des panneaux du joueur B par clicks sur les boutons panneaux
-        n = path.split("/")[-1]
-        print("http_handler> BBTN=", n)
-        if n == '6':
-            jeuB.start()
-        elif n == '7':
-            jeuB.stop()
-
-        if jeuB.running or n == '7':
-            t = jeuB.now()
-            p = len(jeuB.penalties)
-            total = t + p
-            values = f"BVALUES={t},{p},{total}"
-            print("values=", values)
-            await queue_sse.put(values)
-            await queue_sse.put("BBTN=" + n)
-        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
-        await w.aclose()
-        
-        print("jeuB btn", jeuB.running)
-        return True
-
-    if path.startswith("/start"):
-        # gestion global du démarrage du jeu pour les deux joueurs
-        await queue_sse.put("START")
-        # esp_task = asyncio.create_task(espnow_sim())
-        # esp_task = asyncio.create_task(callback(e))
-        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
-        await w.aclose()
-        jeuA.restart()
-        jeuB.restart()
-        print("jeu START", jeuA.running, jeuB.running)
-        return True
-
-    if path=="/reset":
-        # gestion global du reset du jeu pour les deux joueurs
-        await queue_sse.put("RESET")
-        if not esp_task is None:
-            esp_task.cancel()
-        jeuA.reset()
-        jeuB.reset()
-        values = f"AVALUES=0,0,0"
-        print("values=", values)
-        await queue_sse.put(values)
-        values = f"BVALUES=0,0,0"
-        print("values=", values)
-        await queue_sse.put(values)
-        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
-        await w.aclose()
-        print("jeuA RESET", jeuA.running)
-        return True
-
-    return False
 
 
 """
@@ -200,15 +128,13 @@ def script_header_side(side):
 def script_side(side):
     return (
             "if (key === '" + side + "PID') {"
-              "var n = obj;"
-              "console.log(n);"
-              # "" + side + "RB();"
-              "document.getElementById('" + side + "b'+m).style.background='red';"
-              "" + side + "L.appendChild(ligne);"
+              "var n = obj.split(',')[0];"
+              "console.log('>>> key=' + key + ' obj=' + obj + ' n=' + n);"
+              "" + side + "p(n);"
             "}"
             "if (key === '" + side + "BTN') {"
-              "var n = obj;"
-              "console.log(n);"
+              "var n = obj.split(',')[0];"
+              "console.log('>>> key=' + key + ' obj=' + obj + ' n=' + n);"
               # "" + side + "RB();"
               "document.getElementById('" + side + "b'+n).style.background='red';"
               "" + side + "L.appendChild(ligne);"
@@ -260,6 +186,119 @@ script=(
 )
 
 
+# gestion des routes HTTP
+
+async def play(robot_id, n):
+    print("play> n=", n, "robot_id=", robot_id)
+
+    jeu = games[robot_id]
+    
+    print("play> ")
+    
+    if n == '6':
+        jeu.start ()
+
+    if jeu.running:
+        t = jeu.now()
+        p = len(jeu.penalties)
+        total = t + p
+        values = robot_id + f"VALUES={t},{p},{total}"
+        print("values=", values)
+        await queue_sse.put(values)
+        await queue_sse.put(robot_id + "BTN=" + n)
+        
+    if n == '7':
+        jeu.stop()
+
+
+
+async def http_handler(server, path, w):
+    global esp_task
+    
+    
+    print("http_handler", path, jeuA.running, jeuB.running)
+    if path.startswith("/Abtn/"):
+        # simulation de la détection des panneaux du joueur A par clicks sur les boutons panneaux
+        n = path.split("/")[-1]
+
+        print("calling play> n=", n, "path[1]=", path[1])
+
+        await play(path[1], n)
+        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
+        await w.aclose()        
+        return True
+
+    if path.startswith("/Bbtn/"):
+        # simulation de la détection des panneaux du joueur B par clicks sur les boutons panneaux
+        n = path.split("/")[-1]
+        await play(path[1], n)
+        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
+        await w.aclose()
+        return True
+
+    if path.startswith("/start"):
+        # gestion global du démarrage du jeu pour les deux joueurs
+        await queue_sse.put("START")
+        queue_espnow.clear()
+        esp_task = asyncio.create_task(espnow_dispatcher())
+        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
+        await w.aclose()
+        jeuA.restart()
+        jeuB.restart()
+        print("jeu START", jeuA.running, jeuB.running)
+        return True
+
+    if path=="/reset":
+        # gestion global du reset du jeu pour les deux joueurs
+        await queue_sse.put("RESET")
+        if not esp_task is None:
+            esp_task.cancel()
+        jeuA.reset()
+        jeuB.reset()
+        values = f"AVALUES=0,0,0"
+        print("values=", values)
+        await queue_sse.put(values)
+        values = f"BVALUES=0,0,0"
+        print("values=", values)
+        await queue_sse.put(values)
+        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
+        await w.aclose()
+        print("jeuA RESET", jeuA.running)
+        return True
+
+    return False
+
+
+# gestion espnow
+def get_robot_id(mac):
+    global robots
+    
+    """
+    le dict robots va enregistrer les adresses mac des robots qui envoient des messages espnow.
+    à priori ceci ne concerne que 2 robots, mais sans que ce soit bloquant. Donc les valeurs
+    du dict sont simplement le numéro d'arrivée des premiers messages des robots
+    """
+
+    if not mac in robots:
+        robots[mac] = len(robots)
+        
+    id = ids[robots[mac]]
+
+    return id
+
+def callback(e):
+    # Attendre un message
+    mac, msg = e.recv()
+    if msg:  # Un message est reçu
+        id = get_robot_id(mac)
+        print("callback> id=", id)
+        txt = msg.decode('utf-8')
+        # on convertit le format d'origine vers le format équivalent à l'appui d'un bouton
+        txt = id + "PID=" + txt.split("=")[1]
+        print("Message reçu decode :", txt)
+        queue_espnow.append(txt)   # pas d’await ici !
+
+
 """
 Main de l'application
 """
@@ -274,15 +313,6 @@ peer_mac = robot_mac[1]
 print("peer_mac=", peer_mac)
 e.add_peer(peer_mac)
 
-# gestion espnow
-def callback(e):
-    # Attendre un message
-    mac, msg = e.recv()
-    if msg:  # Si un message est reçu
-        txt = msg.decode('utf-8')
-        print("Message reçu decode :", txt)
-        queue_espnow.append(txt)   # pas d’await ici !
-
 async def espnow_dispatcher():
     while True:
         if queue_espnow:
@@ -294,7 +324,7 @@ async def espnow_dispatcher():
                 # parts = msg.split(":")
                 # pid = parts[0]  # "5"
 
-                await queue_sse.put("PID=" + msg)
+                await queue_sse.put(msg)
             except:
                 pass
 
@@ -305,7 +335,7 @@ e.irq(callback)
 # boucle du serveur
 async def main():
     queue_espnow.clear()
-    asyncio.create_task(espnow_dispatcher())
+    # asyncio.create_task(espnow_dispatcher())
     await server.run()
 
 asyncio.run(main())
