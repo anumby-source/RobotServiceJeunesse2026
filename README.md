@@ -112,14 +112,15 @@ Etat d'avancement du programme de base:
 # Logique des événements dans le programme base.
 
 On gère plusieurs sources d'événements:
-- il y a ce qui vient de espnow: ce sont des événements produits par les robots
+- il y a ce qui vient de espnow: ce sont des événements produits par les robots. Ces messages contienent:
    - le numéro du robot (=> 1..6)
    - Les ID des panneaux reconnus par le K210
    - l'état du moteurs (=> vitesse=0, v1, v2)
-- il y a ce qui vient de l'IHM (à travers des appels (fetch("<key>=<data>"))
+   - avec le format: "PID=robot,ID,vitesse"
+- il y a ce qui vient de l'IHM (à travers des appels (fetch("key=data"))
 
 Les événements espnow sont mis en queue dans la queue "queue_espnow", qui est elle-même exploitée (dépilée) par la fonction
-"espnow_dispatcher", qui transforme les evts "espnow" en evts SSE. Ces événements ont le format "PID=<data>"
+"espnow_dispatcher", qui transforme les evts "espnow" en evts SSE. Ces événements ont le format "PID=data"
 
 Ces événements produisent tous des messages SSE, qui sont mis en queue d'attente dans la queue "queue_sse".
 La queue "queue_sse" est dépilée par la fonction du serveur "Server.sse_broadcaster()".
