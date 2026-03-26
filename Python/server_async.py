@@ -2,22 +2,22 @@ import uasyncio as asyncio
 import network
 import machine
 
-SSID="ESP32-CAM"
-PASSWORD="12345678"
-PORT=80
+SSID = "ESP32-CAM"
+PASSWORD = "12345678"
+PORT = 80
 
 class ServerAsync:
-    def __init__(self,title="",style="",script="",body=""):
-        self.title=title
-        self.style=style
-        self.script=script
-        self.body=body
-        self.http_handler=None
-        self.sse_queue=None
-        self.sse_clients=[]
+    def __init__(self, title="", style="", script="", body=""):
+        self.title = title
+        self.style = style
+        self.script = script
+        self.body = body
+        self.http_handler = None
+        self.sse_queue = None
+        self.sse_clients = []
 
-    def set_handler(self,h): self.http_handler=h
-    def set_sse_queue(self,q): self.sse_queue=q
+    def set_handler(self, h): self.http_handler = h
+    def set_sse_queue(self, q): self.sse_queue = q
 
     def html(self):
         return (
@@ -60,38 +60,12 @@ class ServerAsync:
 "</body></html>"
         )
 
+    # Envoi de la page HTML
     async def send_html(self,writer):
-        """
         page = self.html()
-        print("Server.send_html", len(page))
-
-        header = (
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/html\r\n"
-            "Connection: close\r\n"
-            "\r\n"
-        )
-
-        await writer.awrite(header)
-
-        bloc = 1024
-        for i in range(0, len(page), bloc):
-            b = page[i:i+bloc]
-            print("Server.send_html", len(b))
-            await writer.awrite(b)
-
-            # flush si disponible
-            if hasattr(writer, "drain"):
-                await writer.drain()
-            else:
-                await asyncio.sleep_ms(1)
-
-        await writer.aclose()
-        """
-        page=self.html()
         # print("Server.send_html> page=", len(page))
 
-        header="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
+        header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
 
         await writer.awrite(header)
         await asyncio.sleep(0)
@@ -105,10 +79,11 @@ class ServerAsync:
 
         await writer.aclose()
 
+    # pile des événements SSE
     async def sse_broadcaster(self):
         while True:
-            msg=await self.sse_queue.get()
-            dead=[]
+            msg = await self.sse_queue.get()
+            dead = []
             for w in self.sse_clients:
                 try:
                     await w.awrite("data: "+msg+"\n\n")
@@ -117,23 +92,24 @@ class ServerAsync:
             for w in dead:
                 self.sse_clients.remove(w)
 
+    # gesion de routes internes
     async def handle_client(self,reader,writer):
-        req=await reader.readline()
+        req = await reader.readline()
         if not req:
             await writer.aclose()
             return
         
         print("Server.handle_client", req)
 
-        req=req.decode()
-        method,path,_=req.split(" ",2)
+        req = req.decode()
+        method,path, _ = req.split(" ",2)
 
-        if path=="/exit":
+        if path == "/exit":
             await writer.awrite("HTTP/1.1 200 OK\r\n\r\nBYE")
             await writer.aclose()
             machine.reset()
 
-        if path=="/events":
+        if path == "/events":
             await writer.awrite(
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: text/event-stream\r\n"
@@ -144,28 +120,29 @@ class ServerAsync:
             return
 
         if self.http_handler:
-            handled=await self.http_handler(self, path, writer)
+            handled = await self.http_handler(self, path, writer)
             if handled: return
 
-        if path=="/":
+        if path == "/":
             await self.send_html(writer)
             return
 
         await writer.awrite("HTTP/1.1 404 Not Found\r\n\r\n")
         await writer.aclose()
 
+    # lancement du serveur
     async def run(self):
-        ap=network.WLAN(network.AP_IF)
+        ap = network.WLAN(network.AP_IF)
         ap.active(True)
         ap.config(essid=SSID,password=PASSWORD)
 
         while not ap.active():
             await asyncio.sleep(0.1)
 
-        print("IP:",ap.ifconfig()[0])
+        print("IP:", ap.ifconfig()[0])
 
         asyncio.create_task(self.sse_broadcaster())
-        await asyncio.start_server(self.handle_client,"0.0.0.0",PORT)
+        await asyncio.start_server(self.handle_client, "0.0.0.0", PORT)
 
         while True:
             await asyncio.sleep(1)
