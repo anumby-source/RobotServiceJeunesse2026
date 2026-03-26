@@ -236,7 +236,7 @@ script=(
         "var E = new EventSource('/events');"
         "" + script_header_side('A') + ""
         "" + script_header_side('B') + ""
-        "E.onmessage=function(e){"
+        "E.onmessage = function(e) {"
             "var m = e.data;"
             "key = m.split('=')[0];"
             "obj = m.split('=')[1];"

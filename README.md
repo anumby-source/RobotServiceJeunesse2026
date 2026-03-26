@@ -137,3 +137,14 @@ L'IHM est structurée avec:
     - des boutons pour émuler les panneaux si on fonctionne sans connexion avec les robots ou pour refléter les panneaux effectivement reconnus
     - un panneau des valeurs du jeu, mises à jours en temps réel.
 
+Routes:
+
+- START: démarrage général du jeu
+- RESET: réinitialsation générale du jeu
+- APID: message espnow du robot A
+- BPID: message espnow du robot B
+- ABTN: message IHM du joueur A
+- BBTN: message IHM du joueur B
+- AVALUES: valeurs jeu du joueur A
+- BVALUES: valeurs jeu du joueur B
+
