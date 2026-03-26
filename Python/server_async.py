@@ -89,7 +89,8 @@ class ServerAsync:
         await writer.aclose()
         """
         page=self.html()
-        print("Server.send_html> page=", len(page))
+        # print("Server.send_html> page=", len(page))
+
         header="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
 
         await writer.awrite(header)
@@ -98,7 +99,7 @@ class ServerAsync:
         bloc = 1024*8
         for i in range(0, len(page), bloc):
             b = page[i:i+bloc]
-            print("Server.send_html> bloc=", len(b))
+            # print("Server.send_html> bloc=", len(b))
             await writer.awrite(b)
             await asyncio.sleep(0)
 

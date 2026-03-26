@@ -15,53 +15,56 @@ button{padding:10px 20px;margin:5px;font-size:15px;border:none;border-radius:8px
 .g button{padding:10px;font-size:15px;background:green;color:#fff;border:none;border-radius:8px;}
 .log{margin-top:10px;max-height:150px;overflow:auto;font-family:monospace;}
 .status{font-size:15px;background:#ECECB9;color: black;display:inline-block;}
-.value{padding:5px;font-size:20px;color:red;max-height:20px;resize:none;overflow: hidden;}
+.value{padding:5px;font-size:20px;color:red;max-height:20px;max-width:50px;resize:none;overflow: hidden;}
 
 
 </style>
 </head>
 <body>
-
-
 <div class='card'>
-<h2>title</h2>
 
-        <button id='startBtn' onclick=fetch('/start');>START</button>
-        <button id='resetBtn' onclick=fetch('/reset');>RESET</button>
+<table>
+        <tr>
+                <td>
+
+<h2>A</h2>
+
+        <button id='AstartBtn' onclick=fetch('/start');>START</button>
+        <button id='AresetBtn' onclick=fetch('/reset');>RESET</button>
         <div class="g">
                 <table>
                         <tr>
                                 <td>
-                                        <button id='b6' onclick=p(6);>Start</button>
+                                        <button id='Ab6' onclick=p(6);>Start</button>
                                 </td>
                         </tr>
                         <tr>
                                 <td>
-                                        <button id='b1' onclick=p(1);>Limite 30</button>
-                                        <button id='b2' onclick=p(2);>Cdez le passage</button>
-                                        <button id='b3' onclick=p(3);>Passage pietons</button>
-                                        <button id='b4' onclick=p(4);>Priorite a droite</button>
-                                        <button id='b5' onclick=p(5);>Stationnement</button>
+                                        <button id='Ab1' onclick=p(1);>Limite 30</button>
+                                        <button id='Ab2' onclick=p(2);>Cdez le passage</button>
+                                        <button id='Ab3' onclick=p(3);>Passage pietons</button><br>
+                                        <button id='Ab4' onclick=p(4);>Priorite a droite</button>
+                                        <button id='Ab5' onclick=p(5);>Stationnement</button>
                                 </td>
                         </tr>
                         <tr>
                                 <td>
-                                        <button id='b7' onclick=p(7);>Stop</button>
+                                        <button id='Ab7' onclick=p(7);>Stop</button>
                                 </td>
                         </tr>
                 </table>
         </div>
-        <div id="status" class="status">
+        <div id="Astatus" class="status">
                 <p>Jeu</p>
                 <table>
                         <tr>
-                                <td>temps écoulé:</td><td><textarea id='t1' class="value">t1</textarea></td>
-                                <td>pénalités:</td><td><textarea id='t2' class="value">t2</textarea></td>
-                                <td>temps total:</td><td><textarea id='t3' class="value">t3</textarea></td>
+                                <td>temps écoulé:</td><td><textarea id='At1' class="value">t1</textarea></td>
+                                <td>pénalités:</td><td><textarea id='At2' class="value">t2</textarea></td>
+                                <td>temps total:</td><td><textarea id='At3' class="value">t3</textarea></td>
                         </tr>
                 </table>
         </div>
-        <div id="log" class="log">
+        <div id="Alog" class="log">
                 <p>aaa</p>
                 <p>aaa</p>
                 <p>aaa</p>
@@ -70,6 +73,61 @@ button{padding:10px 20px;margin:5px;font-size:15px;border:none;border-radius:8px
                 <p>aaa</p>
                 <p>aaa</p>
         </div>
+
+                </td>
+                <td>
+
+<h2>B</h2>
+
+        <button id='BstartBtn' onclick=fetch('/start');>START</button>
+        <button id='BresetBtn' onclick=fetch('/reset');>RESET</button>
+        <div class="g">
+                <table>
+                        <tr>
+                                <td>
+                                        <button id='Bb6' onclick=p(6);>Start</button>
+                                </td>
+                        </tr>
+                        <tr>
+                                <td>
+                                        <button id='Bb1' onclick=p(1);>Limite 30</button>
+                                        <button id='Bb2' onclick=p(2);>Cdez le passage</button>
+                                        <button id='Bb3' onclick=p(3);>Passage pietons</button><br>
+                                        <button id='Bb4' onclick=p(4);>Priorite a droite</button>
+                                        <button id='Bb5' onclick=p(5);>Stationnement</button>
+                                </td>
+                        </tr>
+                        <tr>
+                                <td>
+                                        <button id='Bb7' onclick=p(7);>Stop</button>
+                                </td>
+                        </tr>
+                </table>
+        </div>
+        <div id="Bstatus" class="status">
+                <p>Jeu</p>
+                <table>
+                        <tr>
+                                <td>temps écoulé:</td><td><textarea id='Bt1' class="value">t1</textarea></td>
+                                <td>pénalités:</td><td><textarea id='Bt2' class="value">t2</textarea></td>
+                                <td>temps total:</td><td><textarea id='Bt3' class="value">t3</textarea></td>
+                        </tr>
+                </table>
+        </div>
+        <div id="Blog" class="log">
+                <p>aaa</p>
+                <p>aaa</p>
+                <p>aaa</p>
+                <p>aaa</p>
+                <p>aaa</p>
+                <p>aaa</p>
+                <p>aaa</p>
+        </div>
+
+                </td>
+        </tr>
+</table>
+<br>
 
 
 
