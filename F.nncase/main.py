@@ -36,8 +36,8 @@ class Comm:
         self.uart.write(msg.encode())
 
 def init_uart():
-    fm.register(10, fm.fpioa.UART1_TX, force=True)
-    fm.register(11, fm.fpioa.UART1_RX, force=True)
+    fm.register(34, fm.fpioa.UART1_TX, force=True)
+    fm.register(35, fm.fpioa.UART1_RX, force=True)
 
     uart = UART(UART.UART1, 115200, 8, 0, 0, timeout=1000, read_buf_len=256)
     return uart
@@ -103,8 +103,8 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_
 
 if __name__ == "__main__":
     try:
-        # main(anchors = anchors, labels=labels, model_addr=0x300000, lcd_rotation=0)
-        main(anchors = anchors, labels=labels, model_addr="/sd/model-256368.kmodel")
+        main(anchors = anchors, labels=labels, model_addr=0x300000, lcd_rotation=0)
+        # main(anchors = anchors, labels=labels, model_addr="/sd/model-256368.kmodel")
     except Exception as e:
         sys.print_exception(e)
         lcd_show_except(e)
