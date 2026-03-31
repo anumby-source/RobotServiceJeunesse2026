@@ -82,7 +82,7 @@ def body_side(side):
 "<div class='g'>"
 "<table><tr>"
 "<td>"
-"<button id='" + side + "b6' onclick=" + side + "p(6);>Start</button>"
+"<button id='" + side + "b7' onclick=" + side + "p(7);>Start</button>"
 "</td>"
                         "</tr>"
                         "<tr>"
@@ -96,7 +96,7 @@ def body_side(side):
                         "</tr>"
                         "<tr>"
                                 "<td>"
-                                        "<button id='" + side + "b7' onclick=" + side + "p(7);>Stop</button>"
+                                        "<button id='" + side + "b6' onclick=" + side + "p(6);>Stop</button>"
                                 "</td>"
                         "</tr>"
                 "</table>"
@@ -190,13 +190,16 @@ script=(
 
 async def play(robot_id, n):
     print("play> n=", n, "robot_id=", robot_id)
+    n = str(int(n))
 
     jeu = games[robot_id]
     
     print("play> ")
     
-    if n == '6':
+    if n == '7':
+        print("start")
         jeu.start ()
+
 
     if jeu.running:
         t = jeu.now()
@@ -205,9 +208,12 @@ async def play(robot_id, n):
         values = robot_id + f"VALUES={t},{p},{total}"
         print("values=", values)
         await queue_sse.put(values)
+        m = robot_id + "BTN=" + n
+        print("m=", m)
         await queue_sse.put(robot_id + "BTN=" + n)
         
-    if n == '7':
+    if n == '6':
+        print("stop")
         jeu.stop()
 
 
@@ -294,7 +300,7 @@ def callback(e):
         print("callback> id=", id)
         txt = msg.decode('utf-8')
         # on convertit le format d'origine vers le format équivalent à l'appui d'un bouton
-        txt = id + "PID=" + txt.split("=")[1]
+        txt = id + "PID=" + txt
         print("Message reçu decode :", txt)
         queue_espnow.append(txt)   # pas d’await ici !
 
