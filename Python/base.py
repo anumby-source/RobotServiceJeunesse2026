@@ -76,6 +76,7 @@ style=(
 "}"
 )
 
+
 def body_side(side):
     return (
 "<h2>" + side + "</h2>"
