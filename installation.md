@@ -9,17 +9,18 @@ Les programmes `robot.py` ET `telecommande.py` savent détecter automatiquement 
 ## Tous les fichers à installer dans les différents CPUs pour SJ2026:
 
 K210:
-- CCW/main.py
-- CCW/model-259097.kmodel
+- RobotServiceJeunesse2025/Gilles/M5Stack UnitV/M5StickV_Firmware_v5.1.2.kfpkg (charger avec kflash_gui)
+- CCW/model-259097.kmodel (charger avec kflash_gui)
+- CCW/main.py (charger avec MaixPy IDE et mettre en Boot)
 
-CPU Robot:
+CPU Robot (charger avec Thonny):
 - Python/boot.py
 - Python/dcMotor.py
 - Python/mac_addr.py
 - Python/main.py
 - Python/robot.py
 
-CPU télécommande:
+CPU télécommande  (charger avec Thonny):
 - Python/boot.py
 - Python/mac_addr.py
 - Python/main.py
@@ -27,9 +28,12 @@ CPU télécommande:
 - Python/telecommande.py
 - russhughes/*
 
-CPU base:
+CPU base  (charger avec Thonny):
 - Python/base.py
 - Python/server_async.py
 - Python/simple_queue.py
 
-
+La base est un serveur Web avec la procédure habituelle: 
+        `SSID="ESP32-CAM"`
+        `PASSWORD="12345678"`
+        `PORT=80`
