@@ -59,6 +59,7 @@ def center(text, font=font8x8):
 
 #
 num, _ = find_robot()
+print("num=", num)
 robotAddr = robot_mac[num]
 
 #
@@ -109,6 +110,23 @@ try:
 except:
     pass
 print("telecommande.py : robot added to peers")
+
+def callback(e):
+    # Attendre un message
+    mac, msg = e.recv()
+    if msg:  # Un message est reçu
+        if msg[-1] == 0x0A:
+            txt = msg[-3:-1].decode('utf-8')
+            # on convertit le format d'origine vers le format équivalent à l'appui d'un bouton
+            txt = "PID=" + txt
+            print("Message reçu decode :", txt)
+            center(txt, font=font16x32)
+        else:
+            pass
+
+
+e.irq(callback)
+
 #
 while True:
     r, s = a0.read_uv()/1000, a1.read_uv()/1000
@@ -119,6 +137,6 @@ while True:
     cmd += 'mr.set_speed(' + str(rs) + ')\r'
     e.send(robotAddr, cmd.encode(), False)
     # print(cmd.encode())
-    center(f"ls={ls} rs={rs}", font=font16x32)
+    #center(f"ls={ls} rs={rs}", font=font16x32)
     sleep_ms(100)
     

@@ -16,9 +16,6 @@ num, _ = find_robot()
 robotAddr = robot_mac[num]
 telecommandeAddr = telecommande_mac[num]
 
-print("MAC=", robot_mac[num])
-print("Base=", baseAddr)
-
 # motors initialization
 ml = dcMotor(pin1=11, pin2=12, pinEn=9)      # left motor
 mr = dcMotor(pin1=7, pin2=3, pinEn=5)        # right motor

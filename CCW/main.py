@@ -7,8 +7,26 @@ import gc, sys
 from fpioa_manager import fm
 
 input_size = (224, 224)
-labels = ['01', '02', '03', '04', '05', '06', '07']
-anchors = [0.66, 0.63, 1.44, 1.38, 1.88, 1.91, 1.06, 1.03, 0.88, 0.84]
+labels = ['02', '03', '04', '05', '06', '07', '01']
+anchors = [0.84, 0.87, 1.56, 1.66, 1.0, 1.03, 0.62, 0.66, 1.28, 1.31]
+
+from modules import ws2812
+
+led = ws2812(8,100)
+
+r, j, v, b, vi, blk = ((250, 0, 0),
+                       (200, 32, 0),
+                       (0, 128, 0),
+                       (0, 0, 250),
+                       (128, 0, 128),
+                       (0, 0, 0))
+leds = (r, j, v, b, vi)
+
+led.set_led(0, (0, 0, 0))
+led.display()
+
+ind = 0
+
 
 def lcd_show_except(e):
     import uio
@@ -24,6 +42,7 @@ class Comm:
         self.uart = uart
 
     def send_detect_result(self, objects, labels):
+        global ind
         msg = ""
         for obj in objects:
             pos = obj.rect()
@@ -31,16 +50,23 @@ class Comm:
             idx = obj.classid()
             label = labels[idx]
             # msg += "{}:{}:{}:{}:{}:{:.2f}:{}, ".format(pos[0], pos[1], pos[2], pos[3], idx, p, label)
-            msg += "{}:{}, ".format(idx, label)
+            msg += "{}".format(label)
+
         if msg:
-            msg = msg[:-2] + "\n"
+            msg = msg + "\n"
+
         self.uart.write(msg.encode())
 
-def init_uart():
-    fm.register(34, fm.fpioa.UART2_RX, force=True)
-    fm.register(35, fm.fpioa.UART2_TX, force=True)
+        led.set_led(0, leds[ind])
+        led.display()
 
-    uart = UART(UART.UART2, 115200, 8, None, 1, timeout=1000, read_buf_len=4096)
+        ind = (ind + 1 ) % 5
+
+def init_uart():
+    fm.register(34, fm.fpioa.UART1_TX, force=True)
+    # fm.register(35, fm.fpioa.UART1_RX, force=True)
+
+    uart = UART(UART.UART1, 115200, 8, 0, 0, timeout=1000, read_buf_len=256)
     return uart
 
 def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_size, lcd_rotation=0, sensor_hmirror=False, sensor_vflip=False):
@@ -83,20 +109,21 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_
         while(True):
             img = sensor.snapshot()
             t = time.ticks_ms()
-            img = img.rotate(90)
             objects = kpu.run_yolo2(task, img)
             t = time.ticks_ms() - t
             if objects:
                 for obj in objects:
                     pos = obj.rect()
                     img.draw_rectangle(pos)
-                    img.draw_string(pos[0], pos[1], "%s : %.2f" %(labels[obj.classid()], obj.value()), scale=2, color=(255, 0, 0))
+                    img.draw_string(pos[0], pos[1], "    %s : %.2f" %(labels[obj.classid()], obj.value()), scale=2, color=(255, 0, 0))
                 comm.send_detect_result(objects, labels)
-            img.draw_string(0, 200, "t:%dms" %(t), scale=2, color=(255, 0, 0))
-            img.draw_string(0, 2, "Upgrade to MaixCAM to use YOLOv8", scale=1.2, color=(255, 0, 0))
-            img.draw_string(0, 30, "wiki.sipeed.com/maixcam", scale=1.2, color=(255, 0, 0))
+            # img.draw_string(0, 200, "t:%dms" %(t), scale=2, color=(255, 0, 0))
+            # img.draw_string(0, 2, "Upgrade to MaixCAM to use YOLOv8", scale=1.2, color=(255, 0, 0))
+            # img.draw_string(0, 30, "wiki.sipeed.com/maixcam", scale=1.2, color=(255, 0, 0))
             lcd.display(img)
     except Exception as e:
+        led.set_led(0, (0, 0, 0))
+        led.display()
         raise e
     finally:
         if not task is None:
@@ -105,8 +132,8 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=input_
 
 if __name__ == "__main__":
     try:
-        main(anchors = anchors, labels=labels, model_addr=0x300000, lcd_rotation=0)
-        # main(anchors = anchors, labels=labels, model_addr="/sd/model-256368.kmodel")
+        main(anchors = anchors, labels=labels, model_addr=0x300000, lcd_rotation=1)
+        # main(anchors = anchors, labels=labels, model_addr="/sd/model-259097.kmodel")
     except Exception as e:
         sys.print_exception(e)
         lcd_show_except(e)

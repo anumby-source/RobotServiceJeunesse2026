@@ -5,8 +5,37 @@ import KPU as kpu
 from machine import UART
 import gc, sys
 from fpioa_manager import fm
-from lib_led import *
-from lib_model import *
+
+input_size = (224, 224)
+labels = ['04', '05', '06', '07', '01', '02', '03']
+#labels = ['stationnement', 'priorite_a_droite', 'pietons', 'ceder_le_passage', 'limitation_30', 'stop', 'start']
+anchors = [1.22, 1.25, 1.53, 1.62, 0.62, 0.66, 1.0, 1.03, 0.84, 0.88]
+
+from modules import ws2812
+
+class Led:
+    def __init__(self):
+        self.led = ws2812(8,100)
+
+        r, j, v, b, vi, blk = ((250, 0, 0),
+                               (200, 32, 0),
+                               (0, 128, 0),
+                               (0, 0, 250),
+                               (128, 0, 128),
+                               (0, 0, 0))
+        self.leds = (r, j, v, b, vi)
+
+        self.set_led(blk)
+        self.led.display()
+
+    def set_let(self, ind):
+        self.led.set_led(0, self.leds[ind])
+        self.led.display()
+
+    def reset_let(self):
+        self.set_led(0, (0, 0, 0))
+        self.led.display()
+
 
 led = Led()
 
@@ -26,16 +55,16 @@ class Comm:
             p = obj.value()
             idx = obj.classid()
             label = labels[idx]
-            msg += "{}:{}:{}:{}:{}:{:.2f}:{}, ".format(pos[0], pos[1], pos[2], pos[3], idx, p, label)
-        if msg:
-            msg = msg[:-2] + "\n"
-        self.uart.write(msg.encode())
+            # msg += "{}:{}:{}:{}:{}:{:.2f}:{}, ".format(pos[0], pos[1], pos[2], pos[3], idx, p, label)
+            msg += "{}, ".format(label)
+            msg = msg + "\n"
+            self.uart.write(msg.encode())
         led.set_led(0, ind)
         ind = (ind + 1 ) % 5
 
 def init_uart():
     fm.register(34, fm.fpioa.UART1_TX, force=True)
-    fm.register(35, fm.fpioa.UART1_RX, force=True)
+    # fm.register(35, fm.fpioa.UART1_RX, force=True)
 
     uart = UART(UART.UART1, 115200, 8, 0, 0, timeout=1000, read_buf_len=256)
     return uart

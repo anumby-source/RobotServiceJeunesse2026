@@ -6,8 +6,7 @@ import time
 # Setup UART in receiver
 fm.register(34, fm.fpioa.UART2_RX, force=True)
 fm.register(35, fm.fpioa.UART2_TX, force=True)
-uart = UART(UART.UART2, 9600, 8, None, 1, timeout=1000, read_buf_len=4096)
-print(uart)
+uart = UART(UART.UART2, 115200, 8, None, 1, timeout=1000, read_buf_len=4096)
 
 # setup the camera
 import sensor
