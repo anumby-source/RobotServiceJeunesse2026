@@ -1,0 +1,32 @@
+"""
+bigbuckbunny.py
+
+    Draw a full screen png
+
+    bigbuckbunny.png (c) copyright 2008, Blender Foundation / www.bigbuckbunny.org
+"""
+
+import os
+import st7789
+import tft_config
+from time import sleep
+
+tft = tft_config.config(3, buffer_size=4096)
+
+def main():
+    '''
+    Decode and draw png on display
+    '''
+
+    tft.init()
+#     png_file_name = f'bigbuckbunny-{tft.width()}x{tft.height()}.png'
+#     print(png_file_name)
+#     tft.png(png_file_name, 0, 0)
+#     sleep(2)
+    png_file_name = 'Anumby-240x135.png'
+    print(png_file_name)
+    tft.png(png_file_name, 0, 0)
+
+os.chdir('/russhughes/demos')
+main()
+os.chdir('/')
