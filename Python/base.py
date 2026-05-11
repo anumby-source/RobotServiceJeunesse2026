@@ -11,6 +11,10 @@ import espnow
 sta = network.WLAN(network.STA_IF)
 sta.active(True)
 
+mac_base = sta.config('mac')
+print("MAC de base :", mac_base)
+
+
 # Initialisation d’ESP-NOW
 e = espnow.ESPNow()
 e.active(True)
@@ -57,10 +61,26 @@ jeuB = Jeu()
 games = dict()
 games['A'] = jeuA
 games['B'] = jeuB
-ids = ['A', 'B']
+ids = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+# le dictionnaire contient les MAC adresses ordonnées par les ids
 robots = dict()
 
-
+def simul_robots():
+    global robots
+    
+    robots = dict()
+    # simulation sans aucun robot on simule la situation où les robots 3 et 5 se sont déclarés
+    # cette situation existe quand on n'a pas de connection avec aucun robot.
+    r1 = urandom.randint(0, 6)
+    r2 = None
+    while True:
+        r2 = urandom.randint(0, 6)
+        if r2 == r1: continue
+        break
+    robots[ids[len(robots)]] = robot_mac[r1]
+    robots[ids[len(robots)]] = robot_mac[r2]
+    print("simul_robots> Connect", r1, r2)
 
 """
 IHM
@@ -79,7 +99,8 @@ style=(
 
 def body_side(side):
     return (
-"<h2>" + side + "</h2>"
+        
+"<h2><button id='Robot" + side + "' onclick=fetch('/Robot" + side + "');>" + side + "</button></h2>"
 "<div class='g'>"
 "<table><tr>"
 "<td>"
@@ -126,6 +147,11 @@ def script_header_side(side):
         "window." + side + "RB = " + side + "RB;"
         )
 
+"""
+        "function RobotSelect" + side + "(n){document.getElementById('Robot" + side + "').value = n;}"
+        "window.RobotSelect" + side + " = RobotSelect" + side + ";"
+"""
+
 def script_side(side):
     return (
             "if (key === '" + side + "PID') {"
@@ -146,6 +172,14 @@ def script_side(side):
                 "document.getElementById('" + side + "t2').value = parts[1] || '';"
                 "document.getElementById('" + side + "t3').value = parts[2] || '';"
                 "" + side + "L.appendChild(ligne);"
+            "}"
+            "console.log('>>> key=' + key + ' obj=' + obj);"
+            "if (key.startsWith('RobotSelect" + side + "')) {"
+                "var num = key.split('(')[1];"
+                "num = num.split(')')[0];"
+                "obj = document.getElementById('Robot" + side + "');"
+                "console.log('>>> obj='+ obj + ' Robot" + side + ".textContent= ' + num);"
+                "obj.textContent = num || '';"
             "}"
         )
 
@@ -216,11 +250,27 @@ async def play(robot_id, n):
     if n == '6':
         print("stop")
         jeu.stop()
+        
 
+def find_robot_from_list(mac):
+    for i in robot_mac:
+        if mac == robot_mac[i]:
+            return i
+    return None
+    
+def robot_select(robot_id):
+    side = robot_id[-1]
+    try:
+        num = find_robot_from_list(robots[side])
+        print("robot_select> robot_id=", robot_id, robots, robot_id[-1], num)
+        return num
+    except:
+        return None
 
 
 async def http_handler(server, path, w):
     global esp_task
+    global robots
     
     
     print("http_handler", path, jeuA.running, jeuB.running)
@@ -239,6 +289,24 @@ async def http_handler(server, path, w):
         # simulation de la détection des panneaux du joueur B par clicks sur les boutons panneaux
         n = path.split("/")[-1]
         await play(path[1], n)
+        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
+        await w.aclose()
+        return True
+    
+    if path.startswith("/RobotA"):
+        print("RobotSelectA")
+        num = robot_select(path)
+        print(f"http_handler> RobotSelectA({num})")
+        await queue_sse.put(f"RobotSelectA({num})")
+        await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
+        await w.aclose()
+        return True
+
+    if path.startswith("/RobotB"):
+        print("RobotSelectB")
+        num = robot_select(path)
+        print(f"http_handler> RobotSelectB({num})")
+        await queue_sse.put(f"RobotSelectB({num})")
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         return True
@@ -271,6 +339,8 @@ async def http_handler(server, path, w):
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         print("jeuA RESET", jeuA.running)
+        robots = dict()
+        simul_robots()
         return True
 
     return False
@@ -287,23 +357,50 @@ def get_robot_id(mac):
     """
 
     if not mac in robots:
-        robots[mac] = len(robots)
+        robots[ids[len(robots)]] = mac
         
     id = ids[robots[mac]]
 
     return id
 
-def callback(e):
+def on_recv(e):
+    global robots
+    
     # Attendre un message
-    mac, msg = e.recv()
+    host, msg = e.recv()
     if msg:  # Un message est reçu
-        id = get_robot_id(mac)
-        print("callback> id=", id)
-        txt = msg.decode('utf-8')
-        # on convertit le format d'origine vers le format équivalent à l'appui d'un bouton
-        txt = id + "PID=" + txt
-        print("Message reçu decode :", txt)
-        queue_espnow.append(txt)   # pas d’await ici !
+        print("Reçu de", host, ":", msg)
+        # Si un robot envoie "HELLO"
+        if msg == b"HELLO":
+            if host not in robots:
+                return
+            print("Nouveau robot détecté :", host)
+            id = ids[len(robots)]
+            robots[id] = host
+
+            # Ajouter robot comme peer
+            try:
+                e.add_peer(host)
+            except OSError:
+                pass  # déjà ajouté
+
+            # Répondre avec l'adresse MAC de base
+            payload = b"MASTER=" + mac_base
+            e.send(host, payload)
+            print("Réponse envoyée à", host)
+
+            print("on_recv> ")
+            num = find_robot_from_list(host)
+            print(f"on_recv> RobotSelectA({num})")
+            queue_espnow.append(f"RobotSelect{id}({num})")
+        else:
+            id = get_robot_id(host)
+            print("on_recv> id=", id)
+            txt = msg.decode('utf-8')
+            # on convertit le format d'origine vers le format équivalent à l'appui d'un bouton
+            txt = id + "PID=" + txt
+            print("Message reçu decode :", txt)
+            queue_espnow.append(txt)   # pas d’await ici !
 
 
 """
@@ -315,10 +412,13 @@ server=ServerAsync("ESP32-S3", style, script, body)
 server.set_handler(http_handler)
 server.set_sse_queue(queue_sse)
 
+
+"""
 # connexion aux robots
 peer_mac = robot_mac[1]
 print("peer_mac=", peer_mac)
 e.add_peer(peer_mac)
+"""
 
 async def espnow_dispatcher():
     while True:
@@ -337,12 +437,14 @@ async def espnow_dispatcher():
 
         await asyncio.sleep(0.05)
 
-e.irq(callback)
+e.irq(on_recv)
 
 # boucle du serveur
 async def main():
     queue_espnow.clear()
     # asyncio.create_task(espnow_dispatcher())
     await server.run()
+    
+simul_robots()
 
 asyncio.run(main())

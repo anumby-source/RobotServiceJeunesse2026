@@ -21,10 +21,6 @@ telecommande_mac = {
     7 : b''
     }
 
-baseAddr = b'$X|\x91\xe0\xd8'
-baseAddr = b'\xd0\xcf\x13C\xa7$'
-baseAddr = b'\xac\xa7\x04\xee\xe4\xb8'
-
 print("Mon adresse MAC:", network.WLAN().config("mac"))
 
 def find_robot():
@@ -32,7 +28,9 @@ def find_robot():
     for i in robot_mac:
         if mac == robot_mac[i]:
             return i, "robot"
+    print("no robot")
     for i in telecommande_mac:
         if mac == telecommande_mac[i]:
             return i, "telecommande"
-    return None
+    print("no télécommande")
+    return None, "unknown robot"

@@ -43,19 +43,63 @@ e = espnow.ESPNow()
 e.active(True)
 print("robot : espnow init ok")
 
-# add telecommande and base to peers
+# essayer de détecter l'adresse de la base via un broadcast espnow
+broadcast = b'\xff\xff\xff\xff\xff\xff'
+
+# Ajouter le broadcast comme peer
+try:
+    e.add_peer(broadcast)
+except OSError:
+    pass
+
+# -----------------------
+# Envoi du broadcast de découverte
+# -----------------------
+print("Envoi du broadcast HELLO...")
+e.send(broadcast, b"HELLO")
+
+
+# add telecommande to peers
 try:
     e.add_peer(telecommandeAddr)
 except:
     pass         # if telecommande already in peer list
 print(b"robot : telecommande address added")
-# 
-try:
-    e.add_peer(baseAddr)
-except:
-    pass         # if baseAddr already in peer list
-print(b"robot : base address added")
 #
+
+
+mac_base = None
+
+
+# -----------------------
+# Callback de réception espnow
+# -----------------------
+def on_recv(_):
+    global mac_base
+    while True:
+        host, msg = e.irecv(0)
+        if not host:
+            break
+
+        print("Reçu de", host, ":", msg)
+
+        # base répond avec "MASTER=<MAC>"
+        if msg.startswith(b"MASTER="):
+            mac_base = msg.split(b"=")[1]
+            print("MAC de base détecté :", mac_base)
+
+            # Ajouter base comme peer
+            try:
+                e.add_peer(mac_base)
+            except OSError:
+                pass
+
+            # Envoyer un message de confirmation
+            e.send(mac_base, b"READY")
+            print("Message READY envoyé à base")
+
+e.irq(on_recv)
+
 
 u.read(u.any())   # empty uart buffer
 msg = b''
@@ -77,3 +121,5 @@ while True:
         if cmd: print(b"robot : error command:" + cmd)
         led.off()    # led on
         break
+    
+    
