@@ -7,7 +7,8 @@ robot_mac = {
     4 : b'H\xf6\xeez/,',
     5 : b'H\xf6\xeez3\x84',
     6 : b'H\xf6\xeez4&',
-    7 : b''
+    7 : b'',
+    8 : b'H\xf6\xeez/\xf6'
     }
 
 telecommande_mac = {
@@ -18,7 +19,8 @@ telecommande_mac = {
     4 : b'\x88\x13\xbf\xfc\xe9p',
     5 : b'\x88\x13\xbf\xfc\xce\xe0',
     6 : b'\x88\x13\xbf\xfc\xe5|',
-    7 : b''
+    7 : b'',
+    8 : b'\x88\x13\xbf\xfc\xe5\x80'
     }
 
 print("Mon adresse MAC:", network.WLAN().config("mac"))
