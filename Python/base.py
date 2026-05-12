@@ -66,6 +66,8 @@ ids = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 # le dictionnaire contient les MAC adresses ordonnées par les ids
 robots = dict()
 
+simulation = True
+
 def simul_robots():
     global robots
     
@@ -340,7 +342,7 @@ async def http_handler(server, path, w):
         await w.aclose()
         print("jeuA RESET", jeuA.running)
         robots = dict()
-        simul_robots()
+        if simulation: simul_robots()
         return True
 
     return False
@@ -365,6 +367,7 @@ def get_robot_id(mac):
 
 def on_recv(e):
     global robots
+    global simulation
     
     # Attendre un message
     host, msg = e.recv()
@@ -375,6 +378,11 @@ def on_recv(e):
             if host not in robots:
                 return
             print("Nouveau robot détecté :", host)
+
+            if simulation:
+                simulation = False
+                robots = dict()
+                
             id = ids[len(robots)]
             robots[id] = host
 
