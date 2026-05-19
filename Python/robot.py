@@ -64,62 +64,59 @@ try:
     e.add_peer(telecommandeAddr)
 except:
     pass         # if telecommande already in peer list
-print(b"robot : telecommande address added")
+print(b"robot : telecommande address added", telecommandeAddr)
 #
 
 
 mac_base = None
 
 
-# -----------------------
-# Callback de réception espnow
-# -----------------------
-def on_recv(_):
-    global mac_base
-    while True:
-        host, msg = e.irecv(0)
-        if not host:
-            break
-
-        print("Reçu de", host, ":", msg)
-
-        # base répond avec "MASTER=<MAC>"
-        if msg.startswith(b"MASTER="):
-            mac_base = msg.split(b"=")[1]
-            print("MAC de base détecté :", mac_base)
-
-            # Ajouter base comme peer
-            try:
-                e.add_peer(mac_base)
-            except OSError:
-                pass
-
-            # Envoyer un message de confirmation
-            e.send(mac_base, b"READY")
-            print("Message READY envoyé à base")
-
-e.irq(on_recv)
-
-
 u.read(u.any())   # empty uart buffer
 msg = b''
+emsg = b''
+old_txt = ""
 #
 while True:
+    # print("wait")
     if u.any():
         msg += u.read(u.any())
         if msg[-1] == 0x0a:  # last char = '\n'
-            e.send(baseAddr, msg)
-            print(msg)
+            if mac_base is None:
+                pass
+            e.send(mac_base, msg)
+            print("envoi vers la télécommande", msg)
             e.send(telecommandeAddr, msg)
             msg = b''       
-    try:
-        addr, cmd = e.recv(0)
-        if cmd: print(cmd)
-        if addr == telecommandeAddr:
-            exec(cmd)
-    except:
-        if cmd: print(b"robot : error command:" + cmd)
-        led.off()    # led on
-        break
-    
-    
+
+    host, emsg = e.recv(0)
+    if host:
+        txt = f"on_recv> Reçu de {host} : {emsg}"
+        
+        if txt != old_txt:
+            # print(txt)
+            old_text = txt
+
+        if host == telecommandeAddr:
+            cmd = emsg
+            try:
+                # print("on_recv> reçu de la télécommande", cmd)
+                exec(cmd)
+            except:
+                if cmd: print(b"robot : error command:" + cmd)
+                led.off()    # led on
+        else:
+            # base répond avec "MASTER=<MAC>"
+            if emsg.startswith(b"MASTER="):
+                mac_base = emsg.split(b"=")[1]
+                print("MAC de base détecté :", mac_base)
+
+                # Ajouter base comme peer
+                try:
+                    e.add_peer(mac_base)
+                except OSError:
+                    pass
+
+                # Envoyer un message de confirmation
+                e.send(mac_base, b"READY")
+                print("Message READY envoyé à base")
+

@@ -29,10 +29,12 @@ def find_robot():
     mac = network.WLAN().config("mac")
     for i in robot_mac:
         if mac == robot_mac[i]:
+            print("je suis le robot n°", i)
             return i, "robot"
     print("no robot")
     for i in telecommande_mac:
         if mac == telecommande_mac[i]:
+            print("je suis la telecommande n°", i)
             return i, "telecommande"
     print("no télécommande")
     return None, "unknown robot"

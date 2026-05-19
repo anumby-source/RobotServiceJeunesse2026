@@ -61,28 +61,36 @@ jeuB = Jeu()
 games = dict()
 games['A'] = jeuA
 games['B'] = jeuB
-ids = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+channels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 
-# le dictionnaire contient les MAC adresses ordonnées par les ids
-robots = dict()
+# le dictionnaire contient les MAC adresses ordonnées par les channels
+connected_robots = []
 
-simulation = True
+simulation = False
 
 def simul_robots():
-    global robots
+    global connected_robots
     
-    robots = dict()
     # simulation sans aucun robot on simule la situation où les robots 3 et 5 se sont déclarés
     # cette situation existe quand on n'a pas de connection avec aucun robot.
-    r1 = urandom.randint(0, 6)
+    r1 = None
     r2 = None
     while True:
-        r2 = urandom.randint(0, 6)
-        if r2 == r1: continue
-        break
-    robots[ids[len(robots)]] = robot_mac[r1]
-    robots[ids[len(robots)]] = robot_mac[r2]
-    print("simul_robots> Connect", r1, r2)
+        try:
+            connected_robots = []
+            r1 = urandom.randint(0, 6)
+            r2 = None
+            while True:
+                r2 = urandom.randint(0, 6)
+                if r2 == r1: continue
+                break
+            connected_robots.append(robot_mac[r1])
+            connected_robots.append(robot_mac[r2])
+            break
+        except:
+            pass
+
+    print("simul_robots> Connect", r1, r2, connected_robots)
 
 """
 IHM
@@ -254,17 +262,20 @@ async def play(robot_id, n):
         jeu.stop()
         
 
-def find_robot_from_list(mac):
+# on trouve le robot à partir de son adresse mac
+def find_robot_num_from_addr(mac):
     for i in robot_mac:
         if mac == robot_mac[i]:
             return i
     return None
-    
-def robot_select(robot_id):
-    side = robot_id[-1]
+
+# Trouve le numéro du robot correspondant au game choisi
+def robot_select(path):
+    side = path[-1]
+    channel = channels.index(side)  # 0..7
     try:
-        num = find_robot_from_list(robots[side])
-        print("robot_select> robot_id=", robot_id, robots, robot_id[-1], num)
+        num = find_robot_num_from_addr(connected_robots[channel])
+        print("robot_select> path=", path, side, connected_robots, num)
         return num
     except:
         return None
@@ -272,7 +283,7 @@ def robot_select(robot_id):
 
 async def http_handler(server, path, w):
     global esp_task
-    global robots
+    global connected_robots
     
     
     print("http_handler", path, jeuA.running, jeuB.running)
@@ -341,7 +352,7 @@ async def http_handler(server, path, w):
         await w.awrite("HTTP/1.1 200 OK\r\n\r\nOK")
         await w.aclose()
         print("jeuA RESET", jeuA.running)
-        robots = dict()
+        connected_robots = []
         if simulation: simul_robots()
         return True
 
@@ -349,42 +360,47 @@ async def http_handler(server, path, w):
 
 
 # gestion espnow
-def get_robot_id(mac):
-    global robots
+def get_game_for_robot(mac):
+    global connected_robots
     
     """
-    le dict robots va enregistrer les adresses mac des robots qui envoient des messages espnow.
+    le dict robots va enregistrer les adresses mac des connected_robots qui envoient des messages espnow.
     à priori ceci ne concerne que 2 robots, mais sans que ce soit bloquant. Donc les valeurs
     du dict sont simplement le numéro d'arrivée des premiers messages des robots
     """
 
-    if not mac in robots:
-        robots[ids[len(robots)]] = mac
+    print("get_game_for_robot>", mac, connected_robots)
+    if not mac in connected_robots:
+        connected_robots.append(mac)
+        channel = channels[len(connected_robots)]
+    else:
+        channel = connected_robots.index(mac)
         
-    id = ids[robots[mac]]
-
-    return id
+    return channels[channel]
 
 def on_recv(e):
-    global robots
+    global connected_robots
     global simulation
     
     # Attendre un message
     host, msg = e.recv()
     if msg:  # Un message est reçu
         print("Reçu de", host, ":", msg)
-        # Si un robot envoie "HELLO"
         if msg == b"HELLO":
-            if host not in robots:
-                return
-            print("Nouveau robot détecté :", host)
-
+            print("Reçu HELLO de la part d'un robot", host, connected_robots, simulation)
             if simulation:
                 simulation = False
-                robots = dict()
-                
-            id = ids[len(robots)]
-            robots[id] = host
+                connected_robots = []
+                print("Reset connected_robots", connected_robots, simulation)
+
+            # ce robot est déjà connecté
+            if host in connected_robots:
+                return
+            
+            print("Nouveau robot détecté :", host)
+
+            game = channels[len(connected_robots)]
+            connected_robots.append(host)
 
             # Ajouter robot comme peer
             try:
@@ -396,17 +412,22 @@ def on_recv(e):
             payload = b"MASTER=" + mac_base
             e.send(host, payload)
             print("Réponse envoyée à", host)
-
-            print("on_recv> ")
-            num = find_robot_from_list(host)
-            print(f"on_recv> RobotSelectA({num})")
-            queue_espnow.append(f"RobotSelect{id}({num})")
+        elif msg == b"READY":
+            print("on_recv> after READY", connected_robots)
+            num = find_robot_num_from_addr(host)
+            try:
+                channel = channels[connected_robots.index(host)]
+                print(f"on_recv> connected_robotselect{channel}({num})")
+                queue_espnow.append(f"RobotSelect{channel}({num})")
+                return
+            except:
+                print("Robot not found")
         else:
-            id = get_robot_id(host)
-            print("on_recv> id=", id)
+            game = get_game_for_robot(host)
+            print("on_recv> game=", game)
             txt = msg.decode('utf-8')
             # on convertit le format d'origine vers le format équivalent à l'appui d'un bouton
-            txt = id + "PID=" + txt
+            txt = game + "PID=" + txt
             print("Message reçu decode :", txt)
             queue_espnow.append(txt)   # pas d’await ici !
 
@@ -453,6 +474,6 @@ async def main():
     # asyncio.create_task(espnow_dispatcher())
     await server.run()
     
-simul_robots()
+# simul_robots()
 
 asyncio.run(main())
